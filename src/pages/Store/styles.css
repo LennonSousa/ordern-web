@@ -1,0 +1,334 @@
+.container-images-restaurant {
+  position: relative;
+  display: flex;
+  width: 100%;
+}
+
+.container-restaurant-cover {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 112px;
+  border-radius: 3px 3px 0px 0px;
+}
+
+.restaurant-cover {
+  width: 100%;
+  height: 112px;
+  background: rgb(244, 245, 247);
+  outline: none;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+}
+
+.container-image-cover{
+  background-color: var(--dark);
+  border-radius: .25rem;
+}
+
+.container-image-cover img{
+  transition: opacity .2s;
+}
+
+.container-image-cover:hover > img{
+  opacity: 0.5;
+}
+
+.container-image-cover:hover .cover-select-container{
+  opacity: 1;
+}
+
+.restaurant-cover-controls {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 112px;
+  display: flex;
+  flex-direction: column;
+  -webkit-box-pack: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  align-items: center;
+  transition: opacity 0.25s ease-in-out 0s;
+  border-radius: 3px 3px 0px 0px;
+  pointer-events: unset;
+}
+
+.cover-select-container {
+  color: var(--danger);
+  opacity: 0;
+  transition: color .2s;
+  transition: opacity .2s;
+}
+
+.cover-select-container label {
+  cursor: pointer;
+  background-color: var(--light);
+  width: 4rem;
+  height: 4rem;
+  border-radius: 5rem;
+  padding-top: 29%;
+  transition: background-color .2s;
+}
+
+.cover-buttons-container {
+  color: var(--danger);
+  transition: color .2s;
+  transition: opacity .2s;
+}
+
+.cover-buttons-container button {
+  box-shadow: 3px 4px 9px 1px var(--gray-dark);
+}
+
+.cover-buttons-container label {
+  cursor: pointer;
+  background-color: var(--light);
+  width: 4rem;
+  height: 4rem;
+  border-radius: 5rem;
+  padding-top: 29%;
+  transition: background-color .2s;
+  box-shadow: 3px 4px 9px 1px var(--gray-dark);
+}
+
+.cover-select-container-success {
+  color: var(--success);
+  transition: color .2s;
+  transition: opacity .2s;
+}
+
+.cover-select-container-success label {
+  cursor: pointer;
+  background-color: var(--light);
+  width: 4rem;
+  height: 4rem;
+  border-radius: 5rem;
+  padding-top: 29%;
+  transition: background-color .2s;
+  box-shadow: 3px 4px 9px 1px var(--gray-dark);
+}
+
+.cover-image-input {
+  display: none;
+}
+
+/* avatar */
+
+.container-restaurant-avatar {
+  margin-top: 14%;
+  margin-left: 42%;
+  position: relative;
+  display: block;
+}
+
+.restaurant-avatar {
+  height: 180px;
+  width: 180px;
+  -webkit-box-align: stretch;
+  align-items: stretch;
+  background-color: rgb(255, 255, 255);
+  border: 0px;
+  border-radius: 50%;
+  padding: 2px;
+  box-sizing: content-box;
+  cursor: inherit;
+  display: flex;
+  flex-direction: column;
+  -webkit-box-pack: center;
+  justify-content: center;
+  outline: none;
+  overflow: hidden;
+  position: static;
+  transform: translateZ(0px);
+  transition: opacity 200ms ease 0s, background-color 200ms ease-out 0s;
+}
+
+.restaurant-avatar-controls {
+  transition: all 0.25s ease 0s;
+  display: flex;
+  -webkit-box-align: center;
+  align-items: center;
+  -webkit-box-pack: center;
+  justify-content: center;
+  flex-direction: column;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  margin: 2px;
+}
+
+.restaurant-avatar-controls:hover {
+  opacity: 1;
+  transition: opacity 0.25s ease 0s;
+  color: rgb(255, 255, 255);
+  background: rgba(9, 30, 66, 0.36);
+}
+
+.avatar-select-container {
+  color: var(--danger);
+  opacity: 0;
+  transition: color .2s;
+  transition: opacity .2s;
+}
+
+.avatar-select-container label {
+  cursor: pointer;
+  background-color: var(--light);
+  width: 4rem;
+  height: 4rem;
+  border-radius: 5rem;
+  padding-top: 29%;
+  transition: background-color .2s;
+}
+
+.avatar-select-container:hover {
+  opacity: 1;
+}
+
+.avatar-buttons-container {
+  color: var(--danger);
+  transition: color .2s;
+  transition: opacity .2s;
+}
+
+.avatar-buttons-container button {
+  box-shadow: 3px 4px 9px 1px var(--gray-dark);
+}
+
+.avatar-buttons-container label {
+  cursor: pointer;
+  background-color: var(--light);
+  width: 4rem;
+  height: 4rem;
+  border-radius: 5rem;
+  padding-top: 29%;
+  transition: background-color .2s;
+  box-shadow: 3px 4px 9px 1px var(--gray-dark);
+}
+
+.avatar-select-container-success {
+  color: var(--success);
+  transition: color .2s;
+  transition: opacity .2s;
+}
+
+.avatar-select-container-success label {
+  cursor: pointer;
+  background-color: var(--light);
+  width: 4rem;
+  height: 4rem;
+  border-radius: 5rem;
+  padding-top: 29%;
+  transition: background-color .2s;
+  box-shadow: 3px 4px 9px 1px var(--gray-dark);
+}
+
+.avatar-image-input {
+  display: none;
+}
+
+.div-image-restaurant {
+  margin-top: -7%;
+}
+
+.div-image-restaurant img {
+  max-width: 20%;
+}
+
+.col-container {
+  display: flex;
+  justify-content: center;
+}
+
+.container-week-day {
+  flex: 0 0 16.666667%;
+  max-width: 12.666667%;
+  margin: 0rem .1rem 0rem;
+}
+
+.week-day {
+  position: relative;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  width: 100%;
+  height: 50px;
+  color: var(--light);
+  margin-bottom: 0 !important;
+  text-align: center;
+}
+
+/* Hide the browser's default checkbox */
+
+.week-day input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkmark {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  background-color: var(--red);
+  display: flex;
+  margin-top: -2.2rem;
+  z-index: -1;
+  transition: background-color .2s;
+}
+
+/* On mouse-over, add a grey background color */
+
+.week-day:hover input~.checkmark {
+  background-color: var(--gray);
+}
+
+/* When the checkbox is checked, add a blue background */
+
+.week-day input:checked~.checkmark {
+  background-color: var(--success);
+  color: var(--white);
+}
+
+/* Create the checkmark/indicator (hidden when not checked) */
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+/* Show the checkmark when checked */
+
+.week-day input:checked~.checkmark:after {
+  display: block;
+}
+
+/* Style the checkmark/indicator */
+
+.week-day .checkmark:after {
+  left: 9px;
+  top: 5px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  -webkit-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  transform: rotate(45deg);
+}
+
+.item-hour {
+  background-color: var(--light);
+  border-radius: .2rem;
+  padding: 0.2rem 0 .1rem .3rem;
+}

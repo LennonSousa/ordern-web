@@ -1,0 +1,48 @@
+.menu-side-container {
+    min-height: 1000px;
+}
+
+.menu-side-container a:hover{
+    color: var(--light);
+}
+
+.container-ordering-menu-links {
+    height: 75px;
+    color: var(--white);
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    width: 100%;
+    margin-bottom: 0.5rem;
+    transition: background-color 0.2s;
+}
+
+.container-ordering-menu-links:hover {
+    background-color: #c72434;
+}
+
+.container-ordering-menu-links-title {
+    font-size: 0.75rem;
+}
+
+.link-ative {
+    height: 75px;
+    color: var(--white);
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    width: 100%;
+    margin-bottom: 0.5rem;
+    background-color: #820712;
+}
+
+.container-ordering-panel {
+    width: 100%;
+    background-color: var(--secondary);
+    z-index: 1;
+}
+
+.accordion-orders-status pl-1 {
+    -webkit-box-shadow: 8px 4px 8px 0 rgba(0, 0, 0, 0.3);
+    box-shadow: 8px 4px 8px 0px rgba(0, 0, 0, 0.3);
+}

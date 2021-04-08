@@ -1,0 +1,21 @@
+.isDragging {
+    border: 2px dashed rgba(0, 0, 0, 0.2);
+    background: var(--light);
+    cursor: grabbing;
+}
+
+.isDragging div {
+    background-color: transparent;
+}
+
+.isDragging span {
+    color: transparent;
+}
+
+.isDragging a {
+    color: transparent;
+}
+
+.isDragging button {
+    color: transparent;
+}
