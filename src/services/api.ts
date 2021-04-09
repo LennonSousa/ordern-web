@@ -1,4 +1,5 @@
 import axios from 'axios';
+import Cookies from 'js-cookie';
 
 const api = axios.create({
     baseURL: 'https://api.casadecarnesisrael.com.br'
@@ -19,6 +20,9 @@ api.interceptors.response.use(function (response) {
     try {
         if (error.response.status === 401) {
             console.log('--401--');
+
+            Cookies.remove('ordern:user');
+            Cookies.remove('ordern:token');
         }
     }
     catch { }
