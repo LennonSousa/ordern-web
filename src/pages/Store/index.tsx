@@ -17,7 +17,7 @@ import { maskCurrency } from '../../utils/maskCurrency';
 import PageHeader from '../../components/PageHeader';
 import BreadCrumb from '../../components/BreadCrumb';
 
-import 'bootstrap/dist/css/bootstrap.min.css';
+
 import './styles.css';
 
 const storeValidatiionSchema = Yup.object().shape({

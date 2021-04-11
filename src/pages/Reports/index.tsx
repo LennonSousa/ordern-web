@@ -82,12 +82,12 @@ function Reports() {
                                                 setOrders(res.data);
                                             }
                                             else if (values.type === "tracker") {
-                                                const res = await api.get(`customer/orders/tracker/${values.tracker}`);
+                                                const res = await api.get(`customers/orders/tracker/${values.tracker}`);
 
                                                 setOrders(res.data);
                                             }
                                             else if (values.type === "customer" && values.customer !== "") {
-                                                const res = await api.get(`customer/orders/customer/${values.customer}`);
+                                                const res = await api.get(`customers/orders/customer/${values.customer}`);
 
                                                 setOrders(res.data);
                                             }

@@ -14,7 +14,7 @@ import OrderItems, { OrderItem } from '../OrderItems';
 
 import noOrderImage from '../../assets/images/undraw_no_data_re_kwbl.svg';
 
-import 'bootstrap/dist/css/bootstrap.min.css';
+
 
 export interface Order {
     id: number;

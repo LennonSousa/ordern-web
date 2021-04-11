@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Row, Col, ListGroup, Button, Spinner } from 'react-bootstrap';
 import { BsPencil, BsFillPlayFill, BsFillPauseFill } from "react-icons/bs";
 
-import { Product } from '../Products';
-
 import api from '../../services/api';
+import { Context } from '../../context/auth';
+import rbac from '../../services/roleBasedAccessControl';
+import { Product } from '../Products';
 
 export interface Highlight {
     id: number;
@@ -19,6 +20,8 @@ interface HighlightProps {
 }
 
 const Highlights: React.FC<HighlightProps> = ({ highlight, handleHighlights, handleModalHighlight }) => {
+    const { user } = useContext(Context);
+
     const [iconWaiting, setIconWaiting] = useState(false);
 
     function handleModalToEditHighlight() {
@@ -63,9 +66,11 @@ const Highlights: React.FC<HighlightProps> = ({ highlight, handleHighlights, han
                     </Button>
                 </Col>
 
-                <Col className="text-center">
-                    <Button variant="outline-danger" className="button-link" onClick={handleModalToEditHighlight}><BsPencil /> Editar</Button>
-                </Col>
+                {
+                    user && rbac.can(String(user.type.code)).updateAny('highlights').granted && <Col className="text-center">
+                        <Button variant="outline-danger" className="button-link" onClick={handleModalToEditHighlight}><BsPencil /> Editar</Button>
+                    </Col>
+                }
             </Row>
         </ListGroup.Item>
     )

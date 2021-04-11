@@ -9,7 +9,7 @@ import { ProductCategory } from '../ProductCategory';
 import { ContextSelectedProduct } from '../../context/selectedProductContext';
 import { maskCurrency } from '../../utils/maskCurrency';
 
-import 'bootstrap/dist/css/bootstrap.min.css';
+
 
 export interface ProductAditional {
     id: number;

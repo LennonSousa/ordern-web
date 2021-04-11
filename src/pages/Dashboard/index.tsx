@@ -15,7 +15,7 @@ import BreadCrumb from '../../components/BreadCrumb';
 
 
 
-import 'bootstrap/dist/css/bootstrap.min.css';
+
 import './styles.css';
 
 interface ordersPerOur {

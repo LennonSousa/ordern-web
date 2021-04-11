@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 
 import api from '../../../services/api';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import { Context } from '../../../context/auth';
+import rbac from '../../../services/roleBasedAccessControl';
 
 import { Row, Col, Button, Modal, Form, ListGroup, Spinner, Alert } from 'react-bootstrap';
 
 import AdditionalItem, { Additional } from '../../../components/Additionals';;
 
 const Additionals: React.FC = () => {
+    const { user } = useContext(Context);
+
     /* Additionals */
     const [listAdditionals, setListAdditionals] = useState<Additional[]>([]);
     const [titleAdditional, setTitleAdditional] = useState('');
@@ -253,13 +256,15 @@ const Additionals: React.FC = () => {
                 </Row>
             </section>
 
-            <article className="mt-3">
-                <Row>
-                    <Col>
-                        <Button variant="danger" onClick={() => { handleModalAdditional(true, 0) }} >Criar adicional</Button>
-                    </Col>
-                </Row>
-            </article>
+            {
+                user && rbac.can(String(user.type.code)).createAny('additionals').granted && <section className="mt-3">
+                    <Row>
+                        <Col>
+                            <Button variant="danger" onClick={() => { handleModalAdditional(true, 0) }} >Criar adicional</Button>
+                        </Col>
+                    </Row>
+                </section>
+            }
 
             <article className="mt-3">
                 <Row>

@@ -7,7 +7,7 @@ import { FaSave } from 'react-icons/fa';
 import { ContextSelectedProduct } from '../../context/selectedProductContext';
 import { convertHourToMinutes, convertMinutesToHours } from '../../utils/convertHourToMinutes';
 
-import 'bootstrap/dist/css/bootstrap.min.css';
+
 
 export interface ProductAvailable {
     id: number;

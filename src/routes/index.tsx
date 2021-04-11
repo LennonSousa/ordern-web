@@ -5,6 +5,7 @@ import Cookies from 'js-cookie';
 
 import { Context } from '../context/auth';
 import { OrdersContext } from '../context/ordersContext';
+import rbac from '../services/roleBasedAccessControl';
 
 import Landing from '../pages/Langing';
 import Dashboard from '../pages/Dashboard';
@@ -13,6 +14,8 @@ import Store from '../pages/Store';
 import Ordering from '../pages/Ordering';
 import Reports from '../pages/Reports';
 import OrderDetails from '../pages/OrderDetails';
+
+
 
 interface CustomRouteProps extends RouteProps {
     isPrivate?: boolean;
@@ -28,7 +31,7 @@ const CustomRoute: React.FC<CustomRouteProps> = ({ isPrivate = false, ...rest })
 
     if (loading) {
         return <Container>
-            <Row style={{ height: '100%' }} className="justify-content-center align-items-center text-center">
+            <Row style={{ height: '100vh' }} className="justify-content-center align-items-center text-center">
                 <Col>
                     <h1>Aguarde, carregando...</h1>
                     <Spinner
@@ -43,12 +46,8 @@ const CustomRoute: React.FC<CustomRouteProps> = ({ isPrivate = false, ...rest })
         </Container>
     }
 
-    if (isPrivate && !signed) {
-        return <Redirect to="/" />
-    }
-    else if (!isPrivate && signed) {
-        return <Redirect to="/dashboard" />
-    }
+    if (isPrivate && !signed) return <Redirect to="/" />
+    if (!isPrivate && signed) return rbac.can(String(user?.type.code)).readAny('reports').granted ? <Redirect to="/dashboard" /> : <Redirect to="/ordering" />
 
     return <Route {...rest} />;
 }

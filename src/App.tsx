@@ -11,8 +11,10 @@ import { StoreProvider } from './context/storeContext';
 import { DaysProvider } from './context/openedDaysContext';
 import { OrdersProvider } from './context/ordersContext';
 import { OrdersNotificationsProvider } from './context/ordersNotificationsContext';
+import { CategoriesProvider } from './context/categoriesContext';
 
 import './assets/styles/global.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
   return (
@@ -21,11 +23,13 @@ function App() {
         <OrdersProvider>
           <OrdersNotificationsProvider>
             <AuthProvider>
-              <DndProvider backend={HTML5Backend}>
-                <Router history={history}>
-                  <Routes />
-                </Router>
-              </DndProvider>
+              <CategoriesProvider>
+                <DndProvider backend={HTML5Backend}>
+                  <Router history={history}>
+                    <Routes />
+                  </Router>
+                </DndProvider>
+              </CategoriesProvider>
             </AuthProvider>
           </OrdersNotificationsProvider>
         </OrdersProvider>

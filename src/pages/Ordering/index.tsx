@@ -10,7 +10,7 @@ import PageHeader from '../../components/PageHeader';
 import OrderStatusItem from '../../components/OrderStatus';
 import OrdersItem, { Order } from '../../components/Orders';
 
-import 'bootstrap/dist/css/bootstrap.min.css';
+
 import './styles.css';
 
 function Ordering() {

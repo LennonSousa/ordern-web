@@ -2,7 +2,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 
 const api = axios.create({
-    baseURL: 'https://api.casadecarnesisrael.com.br'
+    baseURL: 'http://localhost:3333/'
 });
 
 // Add a response interceptor
@@ -23,6 +23,8 @@ api.interceptors.response.use(function (response) {
 
             Cookies.remove('ordern:user');
             Cookies.remove('ordern:token');
+
+            window.location.reload();
         }
     }
     catch { }

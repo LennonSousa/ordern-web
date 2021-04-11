@@ -4,7 +4,7 @@ import { Row, Col, ListGroup } from 'react-bootstrap';
 
 import { OrderItemAdditional } from '../OrderItemAdditionals';
 
-import 'bootstrap/dist/css/bootstrap.min.css';
+
 
 export interface OrderItem {
     id: number;

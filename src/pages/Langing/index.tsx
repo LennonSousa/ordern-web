@@ -11,7 +11,7 @@ import { User } from '../../components/Users';
 import logoImg from '../../assets/images/undraw_add_to_cart.svg';
 import activatedUserImg from '../../assets/images/undraw_Astronaut_re_8c33.svg';
 
-import 'bootstrap/dist/css/bootstrap.min.css';
+
 import './styles.css';
 
 const userValidatiionSchema = Yup.object().shape({

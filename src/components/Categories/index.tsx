@@ -1,13 +1,14 @@
-import React, { useEffect, useState, useRef, useContext } from 'react';
-import { useDrag, useDrop } from 'react-dnd';
+import React, { useState, useContext } from 'react';
+import { Row, Col, ListGroup, Modal, Form, Button, Spinner, Toast } from 'react-bootstrap';
+import { BsFillPauseFill, BsFillPlayFill, BsFiles, BsPencil, BsXCircleFill, BsList } from 'react-icons/bs';
+import { Formik } from 'formik';
+import * as Yup from 'yup';
 
-import { Row, Col, ListGroup, Button, Spinner } from 'react-bootstrap';
-import { BsFillPauseFill, BsFillPlayFill, BsFiles, BsPencil } from 'react-icons/bs';
-
+import api from '../../services/api';
+import { Context } from '../../context/auth';
+import { CategoriesContext } from '../../context/categoriesContext';
+import rbac from '../../services/roleBasedAccessControl';
 import { Product } from '../Products';
-import { ContextDnd } from '../../context/categoriesDnd';
-
-import 'bootstrap/dist/css/bootstrap.min.css';
 
 export interface Category {
     id: number;
@@ -19,114 +20,295 @@ export interface Category {
 
 interface CategoryProps {
     category: Category;
-    index: number;
-    handelModalCategory: any;
-    handelPauseCategory: any;
 }
 
-interface item {
-    type: string;
-    index: number;
-}
+const validatiionSchema = Yup.object().shape({
+    title: Yup.string().required('Obrigatório!').max(25, 'Deve conter no máximo 25 caracteres!'),
+});
 
-const Categories: React.FC<CategoryProps> = ({ category, index, handelModalCategory, handelPauseCategory }) => {
-    const [cssClass, setCssClass] = useState('');
-    const ref = useRef<HTMLDivElement>(null);
+const Categories: React.FC<CategoryProps> = ({ category }) => {
+    const { user } = useContext(Context);
+    const { listCategories, handleListCategories } = useContext(CategoriesContext);
 
-    const { moveOrder, saveOrder } = useContext(ContextDnd);
+    const [showModalEditCategory, setShowModalEditCategory] = useState(false);
 
-    const [{ isDraggin }, dragRef] = useDrag({
-        type: 'CARD',
-        item: index,
-        collect: monitor => ({
-            isDraggin: monitor.isDragging()
-        })
-    });
+    const handleCloseModalEditCategory = () => { setShowModalEditCategory(false); setIconDeleteConfirm(false); setIconDelete(true); }
+    const handleShowModalNewCategory = () => setShowModalEditCategory(true);
 
-    const [, dropRef] = useDrop({
-        accept: 'CARD',
-        hover(item: item, monitor) {
-            if (!ref.current) {
-                return;
+    const [categorySaving, setCategorySaving] = useState(false);
+    const [categoryPausing, setCategoryPausing] = useState(false);
+    const [categoryDuplicating, setCategoryDuplicating] = useState(false);
+
+    const [iconDelete, setIconDelete] = useState(true);
+    const [iconDeleteConfirm, setIconDeleteConfirm] = useState(false);
+    const [iconDeleting, setDeleting] = useState(false);
+
+    const [showErrorCategory, setShowErrorCategory] = useState(false);
+    const toggleShowErrorCategory = () => setShowErrorCategory(!showErrorCategory);
+
+    const togglePauseCategory = async () => {
+        setCategoryPausing(true);
+
+        try {
+            await api.put(`categories/${category.id}`, {
+                title: category.title,
+                paused: !category.paused,
+                order: category.order
+            });
+
+            const res = await api.get('categories');
+
+            handleListCategories(res.data);
+        }
+        catch (err) {
+            console.log("Error to pause category");
+            console.log(err);
+        }
+
+        setCategoryPausing(false);
+    }
+
+    async function handleDuplicateCategory() {
+        setCategoryDuplicating(true);
+        try {
+            if (listCategories) {
+                await api.post('categories', {
+                    title: category.title,
+                    paused: category.paused,
+                    order: listCategories.length
+                });
+
+                const res = await api.get('categories');
+
+                handleListCategories(res.data);
             }
+        }
+        catch (err) {
+            console.log('error create category.');
+            console.log(err);
+        }
 
-            const draggedIndex = item.index;
-            const targetIndex = index;
+        setCategoryDuplicating(false);
+    }
 
-            if (draggedIndex === targetIndex) {
-                return;
-            }
+    async function deleteProduct() {
+        if (iconDelete) {
+            setIconDelete(false);
+            setIconDeleteConfirm(true);
 
-            const targetSize = ref.current?.getBoundingClientRect();
+            return;
+        }
 
-            if (targetSize) {
-                const targetCenter = (targetSize.bottom - targetSize.top) / 2;
+        setIconDeleteConfirm(false);
+        setDeleting(true);
 
-                const draggedOffset = monitor.getClientOffset();
+        try {
+            await api.delete(`categories/${category.id}`);
 
-                if (draggedOffset) {
-                    const draggedTop = draggedOffset.y - targetSize.top;
+            const list = listCategories.filter(item => { return item.id !== category.id });
 
-                    if (draggedIndex < targetIndex && draggedTop < targetCenter) {
-                        return;
-                    }
-
-                    if (draggedIndex > targetIndex && draggedTop > targetCenter) {
-                        return;
-                    }
-
-                    moveOrder(draggedIndex, targetIndex);
-
-                    item.index = targetIndex;
+            list.forEach(async (category, index) => {
+                try {
+                    await api.put(`categories/${category.id}`, {
+                        title: category.title,
+                        paused: category.paused,
+                        order: index
+                    });
                 }
-            }
-        },
-        drop() {
-            saveOrder();
-        }
-    });
+                catch (err) {
+                    console.log('error to save categories order after deleting.');
+                    console.log(err)
+                }
+            });
 
-    useEffect(() => {
-        if (isDraggin) {
-            setCssClass('isDragging');
-        }
-        else {
-            setCssClass('');
-        }
-    }, [isDraggin, dragRef]);
+            const res = await api.get('categories');
 
-    dragRef(dropRef(ref));
+            handleCloseModalEditCategory();
+
+            handleListCategories(res.data);
+        }
+        catch (err) {
+            setDeleting(false);
+            setIconDeleteConfirm(false);
+            setIconDelete(true);
+
+            console.log("Error to delete product");
+            console.log(err);
+        }
+    }
 
     return (
-        <div ref={ref} className={cssClass}>
-            <ListGroup.Item variant={category.paused !== true ? "light" : "danger"} >
-                <Row>
-                    <Col><span>{category.title}</span></Col>
+        <ListGroup.Item variant={category.paused !== true ? "light" : "danger"}>
+            <Row>
+                <Col sm={1}>
+                    <BsList />
+                </Col>
 
-                    <Col>
-                        <Button
-                            variant="outline-danger"
-                            className="button-link"
-                            onClick={() => handelPauseCategory(category.id)}>
-                            {category.paused === true ? (<>Pausado <BsFillPlayFill /></>) : (<>Pausar <BsFillPauseFill /></>)}
-                            <Spinner
+                <Col><span>{category.title}</span></Col>
+
+                <Col>
+                    <Button
+                        variant="outline-danger"
+                        className="button-link"
+                        onClick={togglePauseCategory}>
+                        {
+                            categoryPausing ? <Spinner
                                 as="span"
                                 animation="border"
                                 size="sm"
                                 role="status"
                                 aria-hidden="true"
-                                style={{ display: 'none' }}
-                            />
-                        </Button>
-                    </Col>
+                            /> : category.paused ? (<><BsFillPlayFill /> Pausado</>) : (<><BsFillPauseFill /> Pausar</>)
+                        }
+                    </Button>
+                </Col>
 
-                    <Col><a href="/">Duplicar <BsFiles /></a></Col>
-                    <Col className="text-center">
-                        <Button variant="outline-danger" className="button-link" onClick={() => handelModalCategory(false, category.id)}><BsPencil /> Editar</Button>
-                    </Col>
-                </Row>
-            </ListGroup.Item>
-        </div>
+                {
+                    user && rbac.can(String(user.type.code)).updateAny('categories').granted && <>
+                        <Col className="text-right">
+                            <Button variant="outline-danger" className="button-link" onClick={handleDuplicateCategory}>
+                                {
+                                    categoryDuplicating ? <Spinner
+                                        as="span"
+                                        animation="border"
+                                        size="sm"
+                                        role="status"
+                                        aria-hidden="true"
+                                    /> : <><BsFiles /> Duplicar</>
+                                }
+                            </Button>
+                        </Col>
+
+                        <Col className="text-right">
+                            <Button variant="outline-danger" className="button-link" onClick={handleShowModalNewCategory}><BsPencil /> Editar</Button>
+                        </Col>
+                    </>
+                }
+            </Row>
+
+            <Modal show={showModalEditCategory} onHide={handleCloseModalEditCategory}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Edtiar categoria</Modal.Title>
+                </Modal.Header>
+                <Formik
+                    initialValues={
+                        {
+                            title: category.title
+                        }
+                    }
+                    onSubmit={async values => {
+                        setCategorySaving(true);
+
+                        try {
+                            if (listCategories) {
+                                await api.post('categories', {
+                                    title: values.title,
+                                    paused: category.paused,
+                                    order: category.order
+                                });
+
+                                const res = await api.get('categories');
+
+                                handleListCategories(res.data);
+
+                                handleCloseModalEditCategory();
+                            }
+                        }
+                        catch (err) {
+                            toggleShowErrorCategory();
+
+                            console.log('error create category.');
+                            console.log(err);
+                        }
+
+                        setCategorySaving(false);
+                    }}
+                    validationSchema={validatiionSchema}
+                    validateOnChange={false}
+                >
+                    {({ handleChange, handleBlur, handleSubmit, values, errors, isValid, touched }) => (
+                        <Form onSubmit={handleSubmit}>
+                            <Modal.Body>
+                                <Form.Group controlId="categoryFormGridName">
+                                    <Form.Label>Nome da categoria</Form.Label>
+                                    <Form.Control type="text"
+                                        placeholder="Título"
+                                        onChange={handleChange}
+                                        onBlur={handleBlur}
+                                        value={values.title}
+                                        name="title"
+                                        isInvalid={!!errors.title && touched.title}
+                                    />
+                                    {touched.title && <Form.Control.Feedback type="invalid">{errors.title}</Form.Control.Feedback>}
+                                    <Form.Text className="text-muted text-right">{`${values.title.length}/25 caracteres.`}</Form.Text>
+                                </Form.Group>
+
+                            </Modal.Body>
+                            <Modal.Footer>
+                                <div
+                                    aria-live="polite"
+                                    aria-atomic="true"
+                                    style={{
+                                        position: 'absolute',
+                                        left: 10,
+                                        bottom: 10,
+                                        zIndex: 9999
+                                    }}
+                                >
+                                    <Toast onClose={toggleShowErrorCategory} show={showErrorCategory} animation={false} autohide delay={5000}>
+                                        <Toast.Header style={{ backgroundColor: 'var(--danger)', color: '#fff' }}>
+                                            <BsXCircleFill />
+                                            <strong className="mr-auto">Error</strong>
+                                        </Toast.Header>
+                                        <Toast.Body>Error to save</Toast.Body>
+                                    </Toast>
+                                </div>
+
+                                <Button variant="danger" disabled={isValid ? false : true} type="submit">
+                                    {
+                                        categorySaving ? <Spinner
+                                            as="span"
+                                            animation="border"
+                                            size="sm"
+                                            role="status"
+                                            aria-hidden="true"
+                                        /> : "Create"
+                                    }
+                                </Button>
+
+                                <Button
+                                    title="Delete product"
+                                    variant={iconDelete ? "outline-danger" : "outline-warning"}
+                                    onClick={deleteProduct}
+                                >
+                                    {
+                                        iconDelete && "Excluir"
+                                    }
+
+                                    {
+                                        iconDeleteConfirm && "Confirmar"
+                                    }
+
+                                    {
+                                        iconDeleting && <Spinner
+                                            as="span"
+                                            animation="border"
+                                            size="sm"
+                                            role="status"
+                                            aria-hidden="true"
+                                        />
+                                    }
+                                </Button>
+
+                                <Button variant="secondary" onClick={handleCloseModalEditCategory}>
+                                    Cancelar
+                                </Button>
+                            </Modal.Footer>
+                        </Form>
+                    )}
+                </Formik>
+            </Modal>
+        </ListGroup.Item>
     )
 }
 

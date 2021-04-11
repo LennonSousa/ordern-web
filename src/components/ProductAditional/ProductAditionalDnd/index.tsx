@@ -8,7 +8,7 @@ import { Additional } from '../../Additionals';
 import { ProductCategory } from '../../ProductCategory';
 import { ContextProductAdditionalDnd } from '../../../context/productAdditionalsDnd';
 
-import 'bootstrap/dist/css/bootstrap.min.css';
+
 
 export interface ProductAditional {
     id: number;

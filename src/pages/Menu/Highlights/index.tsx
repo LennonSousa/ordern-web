@@ -3,12 +3,11 @@ import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { BsCheckBox } from "react-icons/bs";
 import { FaSave } from 'react-icons/fa';
-
-import api from '../../../services/api';
-import 'bootstrap/dist/css/bootstrap.min.css';
-
 import { Container, Row, Col, Button, Modal, Form, ListGroup, Spinner, Image, Alert } from 'react-bootstrap';
 
+import api from '../../../services/api';
+import { Context } from '../../../context/auth';
+import rbac from '../../../services/roleBasedAccessControl';
 import { StoreContext } from '../../../context/storeContext';
 import { Category } from '../../../components/Categories';
 import HighlightItem, { Highlight } from '../../../components/Highlights';
@@ -25,7 +24,9 @@ const validatiionSchema = Yup.object().shape({
 });
 
 const HighlightsTab: React.FC<HighlightsTabProps> = ({ categories }) => {
+    const { user } = useContext(Context);
     const { store, handleStore } = useContext(StoreContext);
+
     const [listCategories, setListCategories] = useState<Category[] | null>(null);
 
     /* Additionals */
@@ -222,7 +223,7 @@ const HighlightsTab: React.FC<HighlightsTabProps> = ({ categories }) => {
                 </Row>
             </section>
 
-            <article className="mt-3">
+            <section className="mt-3">
                 <Row>
                     <Col>
                         <Formik
@@ -232,48 +233,49 @@ const HighlightsTab: React.FC<HighlightsTabProps> = ({ categories }) => {
                                 }
                             }
                             onSubmit={async values => {
-                                setSpinnerSaveStoreHighlight(true);
+                                if (user && rbac.can(String(user.type.code)).updateAny('store').granted) {
+                                    setSpinnerSaveStoreHighlight(true);
 
-                                try {
-                                    store && await api.put(`restaurants/${store.id}`, {
-                                        title: store.title,
-                                        phone: store.phone,
-                                        description: store.description,
-                                        min_order: Number(store.min_order),
-                                        zip_code: store.zip_code,
-                                        street: store.street,
-                                        number: store.number,
-                                        group: store.group,
-                                        city: store.city,
-                                        country: store.country,
-                                        latitude: store.latitude,
-                                        longitude: store.longitude,
-                                        free_shipping: store.free_shipping,
-                                        highlights: store.highlights,
-                                        highlights_title: values.highlights_title
-                                    });
+                                    try {
+                                        store && await api.put(`restaurants/${store.id}`, {
+                                            title: store.title,
+                                            phone: store.phone,
+                                            description: store.description,
+                                            min_order: Number(store.min_order),
+                                            zip_code: store.zip_code,
+                                            street: store.street,
+                                            number: store.number,
+                                            group: store.group,
+                                            city: store.city,
+                                            country: store.country,
+                                            latitude: store.latitude,
+                                            longitude: store.longitude,
+                                            free_shipping: store.free_shipping,
+                                            highlights: store.highlights,
+                                            highlights_title: values.highlights_title
+                                        });
 
-                                    setSpinnerSaveStoreHighlight(false);
+                                        setSpinnerSaveStoreHighlight(false);
 
-                                    setSuccessSaveHighlight(true);
+                                        setSuccessSaveHighlight(true);
 
-                                    setTimeout(() => {
-                                        setSuccessSaveHighlight(false);
-                                    }, 5000);
+                                        setTimeout(() => {
+                                            setSuccessSaveHighlight(false);
+                                        }, 5000);
+                                    }
+                                    catch (err) {
+                                        setSpinnerSaveStoreHighlight(false);
+
+                                        setErrorSaveHighlight(true);
+
+                                        setTimeout(() => {
+                                            setErrorSaveHighlight(false);
+                                        }, 5000);
+
+                                        console.log('error create or update store highlight.');
+                                        console.log(err);
+                                    }
                                 }
-                                catch (err) {
-                                    setSpinnerSaveStoreHighlight(false);
-
-                                    setErrorSaveHighlight(true);
-
-                                    setTimeout(() => {
-                                        setErrorSaveHighlight(false);
-                                    }, 5000);
-
-                                    console.log('error create or update store highlight.');
-                                    console.log(err);
-                                }
-
                             }}
                             validationSchema={validatiionSchema}
                         >
@@ -283,6 +285,7 @@ const HighlightsTab: React.FC<HighlightsTabProps> = ({ categories }) => {
                                         <Col sm={10}>
                                             <Form.Control type="text"
                                                 placeholder="Título"
+                                                readOnly={user && rbac.can(String(user.type.code)).updateAny('store').granted ? false : true}
                                                 onChange={handleChange}
                                                 value={values.highlights_title}
                                                 name="highlights_title"
@@ -292,18 +295,20 @@ const HighlightsTab: React.FC<HighlightsTabProps> = ({ categories }) => {
                                             <Form.Text className="text-muted text-right">{`${values.highlights_title.length}/25 caracteres.`}</Form.Text>
                                         </Col>
 
-                                        <Col sm={2}>
-                                            <Button type="submit" variant="outline-danger">{
-                                                spinnerSaveStoreHighlight ? <Spinner
-                                                    as="span"
-                                                    animation="border"
-                                                    size="sm"
-                                                    role="status"
-                                                    aria-hidden="true"
-                                                /> :
-                                                    <FaSave size={20} />
-                                            }</Button>
-                                        </Col>
+                                        {
+                                            user && rbac.can(String(user.type.code)).updateAny('store').granted && <Col sm={2}>
+                                                <Button type="submit" variant="outline-danger">{
+                                                    spinnerSaveStoreHighlight ? <Spinner
+                                                        as="span"
+                                                        animation="border"
+                                                        size="sm"
+                                                        role="status"
+                                                        aria-hidden="true"
+                                                    /> :
+                                                        <FaSave size={20} />
+                                                }</Button>
+                                            </Col>
+                                        }
                                     </Form.Row>
                                 </Form>
                             )}
@@ -332,15 +337,17 @@ const HighlightsTab: React.FC<HighlightsTabProps> = ({ categories }) => {
                         </Form.Row>
                     </Col>
                 </Row>
-            </article>
+            </section>
 
-            <article className="mt-3">
-                <Row>
-                    <Col>
-                        <Button variant="danger" onClick={() => { handleModalHighlight("create", 0) }} >Criar destaque</Button>
-                    </Col>
-                </Row>
-            </article>
+            {
+                user && rbac.can(String(user.type.code)).updateAny('highlights').granted && <section className="mt-3">
+                    <Row>
+                        <Col>
+                            <Button variant="danger" onClick={() => { handleModalHighlight("create", 0) }} >Criar destaque</Button>
+                        </Col>
+                    </Row>
+                </section>
+            }
 
             <article className="mt-3">
                 <Row>

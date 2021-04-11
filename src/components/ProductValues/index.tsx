@@ -5,7 +5,7 @@ import { FaSave } from 'react-icons/fa';
 
 import { maskCurrency } from '../../utils/maskCurrency';
 
-import 'bootstrap/dist/css/bootstrap.min.css';
+
 
 export interface ProductValue {
     id: number;

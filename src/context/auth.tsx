@@ -7,12 +7,7 @@ import socketClient from '../services/socketClient';
 import { OrdersContext } from '../context/ordersContext';
 import { Order } from '../components/Orders';
 import { OrdersNotificationsContext } from '../context/ordersNotificationsContext';
-
-interface User {
-    id: number,
-    name: string;
-    email: string;
-}
+import {User} from '../components/Users';
 
 interface AuthContextData {
     user: User | null;
@@ -107,14 +102,14 @@ const AuthProvider: React.FC = ({ children }) => {
             );
 
             if (res.status === 201) {
-                const { id, name, email, token } = res.data;
+                const { user, token } = res.data;
                 handleOrdersWebSocket();
 
-                setUser({ id, name, email });
+                setUser(user);
 
                 api.defaults.headers['Authorization'] = `Bearer ${token}`;
 
-                Cookies.set('ordern:user', JSON.stringify({ id, name, email }), { expires: 1 });
+                Cookies.set('ordern:user', JSON.stringify(user), { expires: 1 });
                 Cookies.set('ordern:token', token, { expires: 1 });
 
                 setSigned(true);

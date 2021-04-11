@@ -1,12 +1,11 @@
-import React from 'react';
+import React, { useContext } from 'react';
 
 import { Row, Col, ListGroup, Button, Spinner } from 'react-bootstrap';
 import { BsFillPauseFill, BsFillPlayFill, BsFiles, BsPencil } from "react-icons/bs";
 
+import { Context } from '../../context/auth';
+import rbac from '../../services/roleBasedAccessControl';
 import { ProductAditional } from '../ProductAditional';
-
-import 'bootstrap/dist/css/bootstrap.min.css';
-
 
 export interface Additional {
     id: number;
@@ -23,6 +22,8 @@ interface AdditionalProps {
 }
 
 const Additionals: React.FC<AdditionalProps> = ({ additional, handleModalAdditional, handlePauseAdditional }) => {
+    const { user } = useContext(Context);
+
     return (
         <ListGroup.Item variant={additional.paused !== true ? "light" : "danger"} >
             <Row>
@@ -45,10 +46,20 @@ const Additionals: React.FC<AdditionalProps> = ({ additional, handleModalAdditio
                     </Button>
                 </Col>
 
-                <Col><a href="/">Duplicar <BsFiles /></a></Col>
-                <Col className="text-center">
-                    <Button variant="outline-danger" className="button-link" onClick={() => handleModalAdditional(false, additional.id)}><BsPencil /> Editar</Button>
-                </Col>
+                {
+                    user && rbac.can(String(user.type.code)).updateAny('additionals').granted && <>
+                        <Col><a href="/">Duplicar <BsFiles /></a></Col>
+                        <Col className="text-center">
+                            <Button
+                                variant="outline-danger"
+                                className="button-link"
+                                onClick={() => handleModalAdditional(false, additional.id)}><BsPencil
+                                /> Editar
+                            </Button>
+
+                        </Col>
+                    </>
+                }
             </Row>
         </ListGroup.Item>
     )

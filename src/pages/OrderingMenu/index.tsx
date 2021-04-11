@@ -8,7 +8,7 @@ import PageHeader from '../../components/PageHeader';
 import { Category } from '../../components/Categories';
 import ProductItem, { Product } from '../../components/Products';
 
-import 'bootstrap/dist/css/bootstrap.min.css';
+
 
 function OrderingMenu() {
     /* Categorias */

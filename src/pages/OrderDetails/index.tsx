@@ -29,7 +29,7 @@ function OrderDetails() {
 
                 const orderRes: Order = res.data;
 
-                api.get(`/customer/orders/${orderRes.client_id}`).then(res => {
+                api.get(`/customers/orders/${orderRes.client_id}`).then(res => {
                     setCustomerOrders(res.data);
                 }).catch(err => {
                     console.log('Error get customer orders: ', err);

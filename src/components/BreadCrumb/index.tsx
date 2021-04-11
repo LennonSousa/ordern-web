@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 import { Breadcrumb } from 'react-bootstrap';
 
-import 'bootstrap/dist/css/bootstrap.min.css';
+
 
 interface BreadCrumbProps {
     page: string;

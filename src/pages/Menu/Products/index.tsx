@@ -1,8 +1,9 @@
-import React, { useState, useEffect, ChangeEvent, FocusEvent } from 'react';
+import React, { useState, useEffect, useContext, ChangeEvent, FocusEvent } from 'react';
 import produce from 'immer';
 
 import api from '../../../services/api';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import { Context } from '../../../context/auth';
+import rbac from '../../../services/roleBasedAccessControl';
 
 import { Row, Col, Tabs, Tab, Accordion, Card, Image, Button, Modal, Form, ListGroup, Spinner, Alert } from 'react-bootstrap';
 import { BsPlusSquare, BsFilterLeft, BsArrowRepeat } from 'react-icons/bs'
@@ -32,6 +33,8 @@ interface ProductsTabProps {
 }
 
 const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
+    const { user } = useContext(Context);
+
     const [keySelectedProduct, setKeySelectedProduct] = useState('');
 
     const [tabTitleDetails, setTabTitleDetails] = useState('Detalhes');
@@ -913,13 +916,15 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
                         </Row>
                     </section>
 
-                    <article className="mt-3">
-                        <Row>
-                            <Col>
-                                <Button variant="danger" onClick={() => { handleShowCreateProduct(0) }} >Criar produto</Button>
-                            </Col>
-                        </Row>
-                    </article>
+                    {
+                        user && rbac.can(String(user.type.code)).createAny('products').granted && <section className="mt-3">
+                            <Row>
+                                <Col>
+                                    <Button variant="danger" onClick={() => { handleShowCreateProduct(0) }} >Criar produto</Button>
+                                </Col>
+                            </Row>
+                        </section>
+                    }
 
                     <article className="mt-3">
                         <Accordion>
@@ -936,23 +941,29 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
                                                         {category.title}
                                                     </Accordion.Toggle>
                                                 </Col>
-                                                <Col md={3}>
-                                                    <Button
-                                                        variant="outline-danger"
-                                                        className="button-link"
-                                                        onClick={() => handleShowCreateProduct(category.id)}
-                                                    >
-                                                        <BsPlusSquare /> Adicionar produto</Button>
-                                                </Col>
-                                                <Col md={3}>
-                                                    <Button
-                                                        variant="outline-danger"
-                                                        className="button-link"
-                                                        onClick={() => handleShowSortProduct(category.id)}
-                                                    >
-                                                        <BsFilterLeft /> Reordenar itens
-                                                                    </Button>
-                                                </Col>
+
+                                                {
+                                                    user && rbac.can(String(user.type.code)).createAny('products').granted && <>
+                                                        <Col md={3}>
+                                                            <Button
+                                                                variant="outline-danger"
+                                                                className="button-link"
+                                                                onClick={() => handleShowCreateProduct(category.id)}
+                                                            >
+                                                                <BsPlusSquare /> Adicionar produto
+                                                    </Button>
+                                                        </Col>
+                                                        <Col md={3}>
+                                                            <Button
+                                                                variant="outline-danger"
+                                                                className="button-link"
+                                                                onClick={() => handleShowSortProduct(category.id)}
+                                                            >
+                                                                <BsFilterLeft /> Reordenar itens
+                                                    </Button>
+                                                        </Col>
+                                                    </>
+                                                }
                                             </Row>
                                         </Card.Header>
                                         <Accordion.Collapse eventKey={category.id.toString()}>
@@ -1316,38 +1327,38 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
                                                 }
                                             </form>
                                         </> : <Tab.Container id="list-group-tabs-order-complements">
-                                                <Row>
-                                                    <ContextProductCategoryDnd.Provider value={{ moveCategoryOrder }}>
-                                                        <Col>
-                                                            <ListGroup>
-                                                                {
-                                                                    listSelectedProductCategoriesDnd && listSelectedProductCategoriesDnd.map((productCategory, index) => {
-                                                                        return <ProductCategoryDndItem key={productCategory.id} productCategory={productCategory} index={index} />
-                                                                    })
-                                                                }
-                                                            </ListGroup>
-                                                        </Col>
-                                                    </ContextProductCategoryDnd.Provider>
+                                            <Row>
+                                                <ContextProductCategoryDnd.Provider value={{ moveCategoryOrder }}>
+                                                    <Col>
+                                                        <ListGroup>
+                                                            {
+                                                                listSelectedProductCategoriesDnd && listSelectedProductCategoriesDnd.map((productCategory, index) => {
+                                                                    return <ProductCategoryDndItem key={productCategory.id} productCategory={productCategory} index={index} />
+                                                                })
+                                                            }
+                                                        </ListGroup>
+                                                    </Col>
+                                                </ContextProductCategoryDnd.Provider>
 
-                                                    <ContextProductAdditionalDnd.Provider value={{ moveAdditionalOrder }}>
-                                                        <Col>
-                                                            <Tab.Content>
-                                                                {
-                                                                    listSelectedProductCategoriesDnd && listSelectedProductCategoriesDnd.map((productCategory) => {
-                                                                        return <Tab.Pane key={productCategory.id} eventKey={`#${productCategory.id}`}>
-                                                                            {
-                                                                                productCategory.productAdditional.map((productAdditional, index) => {
-                                                                                    return <ProductAdditionalDndItem key={productAdditional.id} productAdditional={productAdditional} index={index} />
-                                                                                })
-                                                                            }
-                                                                        </Tab.Pane>
-                                                                    })
-                                                                }
-                                                            </Tab.Content>
-                                                        </Col>
-                                                    </ContextProductAdditionalDnd.Provider>
-                                                </Row>
-                                            </Tab.Container>
+                                                <ContextProductAdditionalDnd.Provider value={{ moveAdditionalOrder }}>
+                                                    <Col>
+                                                        <Tab.Content>
+                                                            {
+                                                                listSelectedProductCategoriesDnd && listSelectedProductCategoriesDnd.map((productCategory) => {
+                                                                    return <Tab.Pane key={productCategory.id} eventKey={`#${productCategory.id}`}>
+                                                                        {
+                                                                            productCategory.productAdditional.map((productAdditional, index) => {
+                                                                                return <ProductAdditionalDndItem key={productAdditional.id} productAdditional={productAdditional} index={index} />
+                                                                            })
+                                                                        }
+                                                                    </Tab.Pane>
+                                                                })
+                                                            }
+                                                        </Tab.Content>
+                                                    </Col>
+                                                </ContextProductAdditionalDnd.Provider>
+                                            </Row>
+                                        </Tab.Container>
                                     }
                                 </Tab>
 
@@ -1521,18 +1532,18 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
                                     />
                                 </Button>
                             </Modal.Footer> : <Modal.Footer>
-                                    <Button
-                                        variant="outline-danger"
-                                        onClick={() => setShowComplementsDnd(!showComplementsDnd)}
-                                    >Cancelar
+                                <Button
+                                    variant="outline-danger"
+                                    onClick={() => setShowComplementsDnd(!showComplementsDnd)}
+                                >Cancelar
                                                     </Button>
 
-                                    <Button
-                                        variant="danger"
-                                        onClick={saveOrderListProductCategoriesDnd}
-                                    >Aplicar
+                                <Button
+                                    variant="danger"
+                                    onClick={saveOrderListProductCategoriesDnd}
+                                >Aplicar
                                                     </Button>
-                                </Modal.Footer>
+                            </Modal.Footer>
                         }
                     </Modal>
 

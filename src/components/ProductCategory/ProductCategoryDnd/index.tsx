@@ -7,7 +7,7 @@ import { BsList } from 'react-icons/bs';
 import { ProductAditional } from '../../ProductAditional';
 import { ContextProductCategoryDnd } from '../../../context/productCategoriesDnd';
 
-import 'bootstrap/dist/css/bootstrap.min.css';
+
 
 export interface ProductCategory {
     id: number;

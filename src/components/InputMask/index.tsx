@@ -2,7 +2,7 @@ import React, { InputHTMLAttributes, useCallback } from "react";
 
 import { cep, cpf, prettifyCurrency } from "./masks";
 
-import 'bootstrap/dist/css/bootstrap.min.css';
+
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     mask: "cep" | "currency" | "cpf";

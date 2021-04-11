@@ -4,14 +4,13 @@ import { Navbar, Nav, Form, Row, Col, Button, Toast, Badge } from 'react-bootstr
 import { FaHome, FaDolly, FaStore, FaShoppingCart, FaAngleRight, FaChartLine } from 'react-icons/fa';
 
 import { Context } from '../../context/auth';
+import { StoreContext } from '../../context/storeContext';
 import { OrdersNotificationsContext } from '../../context/ordersNotificationsContext';
-
-import logoImg from '../../assets/images/acai-salvador.svg';
-
-import 'bootstrap/dist/css/bootstrap.min.css';
+import rbac from '../../services/roleBasedAccessControl';
 
 function PageHeader() {
-    const { signed, handleLogout } = useContext(Context);
+    const { user, signed, handleLogout } = useContext(Context);
+    const { store } = useContext(StoreContext);
     const { newOrdersAmount, newOrdersTime, newOrdersShow, handleHasShown } = useContext(OrdersNotificationsContext);
 
     const [showBadgeNotification, setShowBadgeNotification] = useState(false);
@@ -43,50 +42,59 @@ function PageHeader() {
             <Navbar bg="dark" variant="dark" expand="lg">
                 <Navbar.Brand>
                     <img
-                        alt=""
-                        src={logoImg}
+                        alt={store?.title}
+                        src={store?.avatar}
                         width="30"
                         height="30"
                         className="d-inline-block align-top"
                     />{' '}
-                    Pedidos & Entregas
-                    </Navbar.Brand>
+                    {store?.title}
+                </Navbar.Brand>
                 <Navbar.Toggle aria-controls="basic-navbar-nav" />
                 <Navbar.Collapse id="basic-navbar-nav">
                     <Nav className="mr-auto">
-                        <Link to="/dashboard" className="nav-link">
-                            <Row className="justify-content-center text-center">
-                                <Col sm={10}>
-                                    <FaHome />
-                                </Col>
+                        {
+                            user && rbac.can(String(user.type.code)).readAny('reports').granted && <Link to="/dashboard" className="nav-link">
+                                <Row className="justify-content-center text-center">
+                                    <Col sm={10}>
+                                        <FaHome />
+                                    </Col>
 
-                                <Col>
-                                    Início
+                                    <Col>
+                                        Início
                                 </Col>
-                            </Row>
-                        </Link>
-                        <Link to="/menu" className="nav-link">
-                            <Row className="justify-content-center text-center">
-                                <Col sm={10}>
-                                    <FaDolly />
-                                </Col>
+                                </Row>
+                            </Link>
+                        }
 
-                                <Col>
-                                    Produtos
-                                </Col>
-                            </Row>
-                        </Link>
-                        <Link to="/store" className="nav-link">
-                            <Row className="justify-content-center text-center">
-                                <Col sm={10}>
-                                    <FaStore />
-                                </Col>
+                        {
+                            user && rbac.can(String(user.type.code)).readAny('products').granted && <Link to="/menu" className="nav-link">
+                                <Row className="justify-content-center text-center">
+                                    <Col sm={10}>
+                                        <FaDolly />
+                                    </Col>
 
-                                <Col>
-                                    Loja
+                                    <Col>
+                                        Produtos
                                 </Col>
-                            </Row>
-                        </Link>
+                                </Row>
+                            </Link>
+                        }
+
+                        {
+                            user && rbac.can(String(user.type.code)).readAny('store').granted && <Link to="/store" className="nav-link">
+                                <Row className="justify-content-center text-center">
+                                    <Col sm={10}>
+                                        <FaStore />
+                                    </Col>
+
+                                    <Col>
+                                        Loja
+                                </Col>
+                                </Row>
+                            </Link>
+                        }
+
                         <Link to="/ordering" className="nav-link">
                             <Row className="justify-content-center text-center">
                                 <Col sm={10}>
@@ -99,17 +107,19 @@ function PageHeader() {
                             </Row>
                         </Link>
 
-                        <Link to="/reports" className="nav-link">
-                            <Row className="justify-content-center text-center">
-                                <Col sm={10}>
-                                    <FaChartLine />
-                                </Col>
+                        {
+                            user && rbac.can(String(user.type.code)).readAny('reports').granted && <Link to="/reports" className="nav-link">
+                                <Row className="justify-content-center text-center">
+                                    <Col sm={10}>
+                                        <FaChartLine />
+                                    </Col>
 
-                                <Col>
-                                    Relatórios
+                                    <Col>
+                                        Relatórios
                                 </Col>
-                            </Row>
-                        </Link>
+                                </Row>
+                            </Link>
+                        }
                     </Nav>
                     {
                         signed && <Form inline>

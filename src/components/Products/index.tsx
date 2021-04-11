@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useContext } from 'react';
 
 import { Row, Col, Button, ListGroup, Spinner } from 'react-bootstrap';
 import { BsFillPlayFill, BsFillPauseFill, BsFiles, BsPencil } from "react-icons/bs";
 
-import 'bootstrap/dist/css/bootstrap.min.css';
+import { Context } from '../../context/auth';
+import rbac from '../../services/roleBasedAccessControl';
 import { Category } from '../Categories';
 import { ProductValue } from '../ProductValues';
 import { ProductCategory } from '../ProductCategory';
@@ -39,6 +40,7 @@ interface ProductProps {
 }
 
 const Products: React.FC<ProductProps> = ({ product, handelModalUpdateProduct, handlePauseProduct }) => {
+    const { user } = useContext(Context);
     return (
         <div>
             <ListGroup.Item variant={product.paused !== true ? "light" : "danger"} >
@@ -62,10 +64,14 @@ const Products: React.FC<ProductProps> = ({ product, handelModalUpdateProduct, h
                         </Button>
                     </Col>
 
-                    <Col><a href="/">Duplicar <BsFiles /></a></Col>
-                    <Col>
-                        <Button variant="outline-danger" className="button-link" onClick={() => handelModalUpdateProduct(product.id)}><BsPencil /> Editar</Button>
-                    </Col>
+                    {
+                        user && rbac.can(String(user.type.code)).updateAny('products').granted && <>
+                            <Col><a href="/">Duplicar <BsFiles /></a></Col>
+                            <Col>
+                                <Button variant="outline-danger" className="button-link" onClick={() => handelModalUpdateProduct(product.id)}><BsPencil /> Editar</Button>
+                            </Col>
+                        </>
+                    }
                 </Row>
             </ListGroup.Item>
         </div>

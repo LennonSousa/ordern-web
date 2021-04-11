@@ -9,7 +9,7 @@ import { BsClock } from 'react-icons/bs';
 import { Order } from '../Orders';
 import { ContextSelectedOrder } from '../../context/selectedOrderContext';
 
-import 'bootstrap/dist/css/bootstrap.min.css';
+
 
 export interface OrderStatus {
     id: number;
