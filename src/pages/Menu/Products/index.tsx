@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useContext, ChangeEvent, FocusEvent } from 'react';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import produce from 'immer';
+import { Row, Col, Tabs, Tab, Accordion, Card, Image, Button, Modal, Form, ListGroup, Spinner, Alert } from 'react-bootstrap';
+import { BsPlusSquare, BsFilterLeft, BsArrowRepeat } from 'react-icons/bs'
 
 import api from '../../../services/api';
 import { Context } from '../../../context/auth';
+import { CategoriesContext } from '../../../context/categoriesContext';
 import rbac from '../../../services/roleBasedAccessControl';
-
-import { Row, Col, Tabs, Tab, Accordion, Card, Image, Button, Modal, Form, ListGroup, Spinner, Alert } from 'react-bootstrap';
-import { BsPlusSquare, BsFilterLeft, BsArrowRepeat } from 'react-icons/bs'
 
 import { Day } from '../../../components/OpenedDays/Days';
 import { Category } from '../../../components/Categories';
@@ -21,9 +22,6 @@ import ProductAvailableItem from '../../../components/ProductAvailable';
 import InputMask from '../../../components/InputMask';
 
 import { ContextSelectedProduct } from '../../../context/selectedProductContext';
-import { ContextProductDnd } from '../../../context/productsDnd';
-import { ContextProductCategoryDnd } from '../../../context/productCategoriesDnd';
-import { ContextProductAdditionalDnd } from '../../../context/productAdditionalsDnd';
 
 import { dayOfWeekAsInteger } from '../../../utils/dayOfWeekAsInteger';
 import noPhoto from '../../../assets/images/no-photo.jpg';
@@ -50,8 +48,8 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
     /* Restaurant Opened Days */
     const [restaurantOpenedDays, setRestaurantOpenedDays] = useState<Day[]>([]);
 
-    /* Categorias */
-    const [listCategories, setListCategories] = useState<Category[] | null>(null);
+    /* Categories */
+    const { listCategories, handleListCategories } = useContext(CategoriesContext);
 
     /* Additionals */
     const [listAdditionals, setListAdditionals] = useState<Additional[]>([])
@@ -61,7 +59,7 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
     const [spinnerDeleteProduct, setSpinnerDeleteProduct] = useState('none');
 
     /* Produtos */
-    const [listSelectedProducts, setListSelectedProducts] = useState<Product[] | null>(null);
+    const [listSelectedProducts, setListSelectedProducts] = useState<Product[]>();
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [listSelectedProductCategoriesDnd, setListSelectedProductCategoriesDnd] = useState<ProductCategory[] | null>(null);
 
@@ -84,6 +82,7 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
     const [showComplementsDnd, setShowComplementsDnd] = useState(false);
 
     /* Product Categories */
+    const [isUpdateAllProductCategories, setIsUpdateAllProductCategories] = useState(false);
     const [listUpdateProductCategories, setListUpdateProductCategories] = useState<Number[]>([]);
     const [listDeleteProductCategories, setListDeleteProductCategories] = useState<Number[]>([]);
 
@@ -153,8 +152,6 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
     }
 
     useEffect(() => {
-        setListCategories(categories);
-
         api.get('additionals')
             .then(res => {
                 setListAdditionals(res.data);
@@ -172,7 +169,7 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
                 console.log('error get restaurant opened days');
                 console.log(err);
             });
-    }, [categories]);
+    }, []);
 
     useEffect(() => {
         if (selectedProduct && selectedProduct.price_one) {
@@ -277,7 +274,7 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
 
                 const res = await api.get('categories');
 
-                setListCategories(res.data);
+                handleListCategories(res.data);
 
                 setSpinnerCreateProduct('none');
                 handleCloseCreateProduct();
@@ -524,7 +521,7 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
 
                 api.get('categories')
                     .then(res => {
-                        setListCategories(res.data);
+                        handleListCategories(res.data);
                     })
                     .catch(err => {
                         console.log('error get categories');
@@ -572,7 +569,7 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
                             category: category.id
                         }).then(() => {
                             api.get('categories').then(res => {
-                                setListCategories(res.data);
+                                handleListCategories(res.data);
                             })
                         })
                     }
@@ -596,11 +593,30 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
             setSpinnerDeleteProduct('inline-block');
 
             try {
-                await api.delete(`products/${selectedProduct.id}`);
 
-                const res = await api.get('categories');
+                if (listSelectedProducts) {
+                    await api.delete(`products/${selectedProduct.id}`);
 
-                setListCategories(res.data);
+                    const list = listSelectedProducts.filter(item => { return item.id !== selectedProduct.id });
+
+                    list.forEach(async (product, index) => {
+                        try {
+                            await api.put(`products/${product.id}`, {
+                                title: product.title,
+                                paused: product.paused,
+                                order: index
+                            });
+                        }
+                        catch (err) {
+                            console.log('error to save categories order after deleting.');
+                            console.log(err)
+                        }
+                    });
+
+                    const res = await api.get('categories');
+
+                    handleListCategories(res.data);
+                }
 
                 setSpinnerDeleteProduct('none');
                 handleCloseUpdateProduct();
@@ -628,47 +644,41 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
     }
 
     /* Sort products */
-    function moveOrder(from: number, to: number) {
-        setListSelectedProducts(produce(listSelectedProducts, draft => {
-            if (draft) {
-                const dragged = draft[from];
-                const target = draft[to];
+    function handleOnDragEnd(result: DropResult) {
+        if (result.destination) {
+            const from = result.source.index;
+            const to = result.destination.index;
 
-                dragged.order = to;
-                target.order = from;
+            const updatedListProducts = produce(listSelectedProducts, draft => {
+                if (draft) {
+                    const dragged = draft[from];
 
-                draft.splice(from, 1);
-                draft.splice(to, 0, dragged);
-            }
-        }));
+                    draft.splice(from, 1);
+                    draft.splice(to, 0, dragged);
+                }
+            });
+
+            if (updatedListProducts) setListSelectedProducts(updatedListProducts);
+        }
     }
 
-    function saveOrder() {
-        if (listSelectedProducts) {
+    async function saveOrder(list: Product[]) {
+        setSpinnerCreateProduct('inline-block');
+
+        list.forEach(async (product, index) => {
             try {
-                listSelectedProducts.forEach(async product => {
-
-                    setSpinnerCreateProduct('inline-block');
-
-                    await api.put(`products/${product.id}`, {
-                        title: product.title,
-                        maiority: product.maiority,
-                        price_one: product.price_one,
-                        price: product.price,
-                        order: product.order,
-                        category: product.category.id
-                    });
+                await api.put(`products/${product.id}`, {
+                    title: product.title,
+                    maiority: product.maiority,
+                    price_one: product.price_one,
+                    price: product.price,
+                    order: index,
+                    category: product.category.id
                 });
 
-                const idCategory = listSelectedProducts[0].category.id;
+                const res = await api.get('categories');
 
-                setListCategories((prevArr) => (prevArr && prevArr.map(category => {
-                    if (category.id === idCategory) {
-                        return { ...category, products: listSelectedProducts }
-                    }
-
-                    return category;
-                })));
+                handleListCategories(res.data);
 
                 setSpinnerCreateProduct('none');
                 handleCloseSortProduct();
@@ -689,8 +699,11 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
                 setTimeout(() => {
                     setErrorSaveProduct(false);
                 }, 5000);
+
+                console.log('error to save products order');
+                console.log(err)
             }
-        }
+        });
     }
 
     async function handleAddProductValue() {
@@ -768,76 +781,64 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
     }
 
     /* Sort product categories additional */
-    function moveCategoryOrder(from: number, to: number) {
-        if (listSelectedProductCategoriesDnd) {
-            setListSelectedProductCategoriesDnd(produce(listSelectedProductCategoriesDnd, draft => {
+    function handleOnDragEndProductCategory(result: DropResult) {
+        if (result.destination) {
+            const from = result.source.index;
+            const to = result.destination.index;
+
+            const updatedListProductCategories = produce(listSelectedProductCategoriesDnd, draft => {
                 if (draft) {
                     const dragged = draft[from];
-                    const target = draft[to];
-
-                    dragged.order = to;
-                    target.order = from;
 
                     draft.splice(from, 1);
                     draft.splice(to, 0, dragged);
 
-                    const idsToUpdate = listUpdateProductCategories;
-
-                    if (!listUpdateProductCategories.find(item => { return item === dragged.id })) {
-                        idsToUpdate.push(dragged.id);
-                    }
-
-                    if (!listUpdateProductCategories.find(item => { return item === target.id })) {
-                        idsToUpdate.push(target.id);
-                    }
-
-                    if (idsToUpdate) {
-                        setListUpdateProductCategories(idsToUpdate);
-                    }
+                    // Need to save all product categories...
                 }
-            }));
+            });
+
+            if (updatedListProductCategories) setListSelectedProductCategoriesDnd(updatedListProductCategories);
         }
     }
 
     /* Sort product additionals */
-    function moveAdditionalOrder(idCategory: number, from: number, to: number) {
-        if (listSelectedProductCategoriesDnd) {
-            setListSelectedProductCategoriesDnd(produce(listSelectedProductCategoriesDnd, draft => {
+    function handleOnDragEndProductAdditionals(result: DropResult, idCategory: number) {
+        if (result.destination) {
+            const from = result.source.index;
+            const to = result.destination.index;
+
+            const updatedListProductCategories = produce(listSelectedProductCategoriesDnd, draft => {
                 if (draft) {
-                    const categoriesUpdated = draft.map(item => {
-                        if (item.id === idCategory) {
-                            const dragged = item.productAdditional[from];
-                            const target = item.productAdditional[to];
+                    const categoriesUpdated = draft.map(productCategory => {
+                        if (productCategory.id === idCategory) {
+                            const dragged = productCategory.productAdditional[from];
 
-                            dragged.order = to;
-                            target.order = from;
-
-                            item.productAdditional.splice(from, 1);
-                            item.productAdditional.splice(to, 0, dragged);
+                            productCategory.productAdditional.splice(from, 1);
+                            productCategory.productAdditional.splice(to, 0, dragged);
 
                             const idsToUpdate = listUpdateProductAdditionals;
 
-                            if (!listUpdateProductAdditionals.find(item => { return item === dragged.id })) {
-                                idsToUpdate.push(dragged.id);
-                            }
-
-                            if (!listUpdateProductAdditionals.find(item => { return item === target.id })) {
-                                idsToUpdate.push(target.id);
-                            }
+                            productCategory.productAdditional.forEach(productAdditionalItem => {
+                                if (!listUpdateProductAdditionals.find(item => { return item === productAdditionalItem.id })) {
+                                    idsToUpdate.push(productAdditionalItem.id);
+                                }
+                            });
 
                             if (idsToUpdate) {
                                 setListUpdateProductAdditionals(idsToUpdate);
                             }
 
-                            return item;
+                            return productCategory;
                         }
 
-                        return item;
+                        return productCategory;
                     });
 
                     draft = categoriesUpdated;
                 }
-            }));
+            });
+
+            if (updatedListProductCategories) setListSelectedProductCategoriesDnd(updatedListProductCategories);
         }
     }
 
@@ -896,682 +897,676 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
             handleListDeleteProductCategories,
             handleListDeleteProductAdditionals
         }}>
-            <ContextProductDnd.Provider value={{ moveOrder }}>
-                <div className="mb-5">
-                    <section className="mt-3">
-                        <Row>
-                            <Col>
-                                <Alert variant="success"
-                                    dismissible
-                                    show={successSaveProduct}>
-                                    Sucesso! As informações foram salvas.
+            <div className="mb-5">
+                <section className="mt-3">
+                    <Row>
+                        <Col>
+                            <Alert variant="success"
+                                dismissible
+                                show={successSaveProduct}>
+                                Sucesso! As informações foram salvas.
                             </Alert>
 
-                                <Alert variant="danger"
-                                    dismissible
-                                    show={errorSaveProduct}>
-                                    Algo deu errado! As informações não foram salvas.
+                            <Alert variant="danger"
+                                dismissible
+                                show={errorSaveProduct}>
+                                Algo deu errado! As informações não foram salvas.
                             </Alert>
+                        </Col>
+                    </Row>
+                </section>
+
+                {
+                    user && rbac.can(String(user.type.code)).createAny('products').granted && <section className="mt-3">
+                        <Row>
+                            <Col>
+                                <Button variant="danger" onClick={() => { handleShowCreateProduct(0) }} >Criar produto</Button>
                             </Col>
                         </Row>
                     </section>
+                }
 
-                    {
-                        user && rbac.can(String(user.type.code)).createAny('products').granted && <section className="mt-3">
-                            <Row>
-                                <Col>
-                                    <Button variant="danger" onClick={() => { handleShowCreateProduct(0) }} >Criar produto</Button>
-                                </Col>
-                            </Row>
-                        </section>
-                    }
+                <article className="mt-3">
+                    <Accordion>
+                        {
+                            listCategories && listCategories.map((category: Category, index) => {
+                                return <Card key={index}>
+                                    <Card.Header>
+                                        <Row>
+                                            <Col md={6}>
+                                                <Accordion.Toggle
+                                                    as={Button}
+                                                    variant="link"
+                                                    eventKey={category.id.toString()}>
+                                                    {category.title}
+                                                </Accordion.Toggle>
+                                            </Col>
 
-                    <article className="mt-3">
-                        <Accordion>
-                            {
-                                listCategories && listCategories.map((category: Category, index) => {
-                                    return <Card key={index}>
-                                        <Card.Header>
-                                            <Row>
-                                                <Col md={6}>
-                                                    <Accordion.Toggle
-                                                        as={Button}
-                                                        variant="link"
-                                                        eventKey={category.id.toString()}>
-                                                        {category.title}
-                                                    </Accordion.Toggle>
-                                                </Col>
-
-                                                {
-                                                    user && rbac.can(String(user.type.code)).createAny('products').granted && <>
-                                                        <Col md={3}>
-                                                            <Button
-                                                                variant="outline-danger"
-                                                                className="button-link"
-                                                                onClick={() => handleShowCreateProduct(category.id)}
-                                                            >
-                                                                <BsPlusSquare /> Adicionar produto
+                                            {
+                                                user && rbac.can(String(user.type.code)).createAny('products').granted && <>
+                                                    <Col md={3}>
+                                                        <Button
+                                                            variant="outline-danger"
+                                                            className="button-link"
+                                                            onClick={() => handleShowCreateProduct(category.id)}
+                                                        >
+                                                            <BsPlusSquare /> Adicionar produto
                                                     </Button>
-                                                        </Col>
-                                                        <Col md={3}>
-                                                            <Button
-                                                                variant="outline-danger"
-                                                                className="button-link"
-                                                                onClick={() => handleShowSortProduct(category.id)}
-                                                            >
-                                                                <BsFilterLeft /> Reordenar itens
-                                                    </Button>
-                                                        </Col>
-                                                    </>
-                                                }
-                                            </Row>
-                                        </Card.Header>
-                                        <Accordion.Collapse eventKey={category.id.toString()}>
-                                            <Card.Body>
-                                                <Row>
-                                                    <Col>
-                                                        <ListGroup>
-                                                            {
-                                                                category.products && category.products.map((product: Product, index) => {
-                                                                    return <ProductItem
-                                                                        key={index}
-                                                                        product={product}
-                                                                        handelModalUpdateProduct={handelModalUpdateProduct}
-                                                                        handlePauseProduct={handlePauseProduct}
-                                                                    />
-                                                                })
-                                                            }
-                                                        </ListGroup>
                                                     </Col>
-                                                </Row>
-                                            </Card.Body>
-                                        </Accordion.Collapse>
-                                    </Card>
-                                })
-                            }
-                        </Accordion>
-                    </article>
-
-                    {/* Modal novo produto */}
-                    <Modal size="lg" show={showCreateProduct} onHide={handleCloseCreateProduct}>
-                        <Modal.Header closeButton>
-                            <Modal.Title>Criar um produto.</Modal.Title>
-                        </Modal.Header>
-                        <Modal.Body>
-                            <Row className="mb-3">
-                                <Col>
-                                    <form>
-                                        <Form.Group>
-                                            <Row className="align-items-end">
-                                                <Col md={3} sm={1}>
-                                                    <Image src={imagePreview} rounded fluid thumbnail />
-                                                </Col>
+                                                    <Col md={3}>
+                                                        <Button
+                                                            variant="outline-danger"
+                                                            className="button-link"
+                                                            onClick={() => handleShowSortProduct(category.id)}
+                                                        >
+                                                            <BsFilterLeft /> Reordenar itens
+                                                    </Button>
+                                                    </Col>
+                                                </>
+                                            }
+                                        </Row>
+                                    </Card.Header>
+                                    <Accordion.Collapse eventKey={category.id.toString()}>
+                                        <Card.Body>
+                                            <Row>
                                                 <Col>
-                                                    <Form.File id="procuctImageFile" onChange={handleSelectImage} label="Escolher imagem" />
+                                                    <ListGroup>
+                                                        {
+                                                            category.products && category.products.map((product: Product, index) => {
+                                                                return <ProductItem
+                                                                    key={index}
+                                                                    product={product}
+                                                                    handelModalUpdateProduct={handelModalUpdateProduct}
+                                                                    handlePauseProduct={handlePauseProduct}
+                                                                />
+                                                            })
+                                                        }
+                                                    </ListGroup>
                                                 </Col>
                                             </Row>
-                                        </Form.Group>
+                                        </Card.Body>
+                                    </Accordion.Collapse>
+                                </Card>
+                            })
+                        }
+                    </Accordion>
+                </article>
 
-                                        <Form.Row>
-                                            <Form.Group as={Col} controlId="newProductFormGridName">
-                                                <Form.Label>Título</Form.Label>
-                                                <Form.Control
-                                                    type="text"
-                                                    placeholder="Ex: Pizzas"
-                                                    onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
-                                                        if (selectedProduct) {
-                                                            setSelectedProduct({ ...selectedProduct, title: e.target.value })
-                                                        }
-                                                    }}
-                                                />
-                                                <Form.Text className="text-muted text-right">1/25 caracteres.</Form.Text>
-                                            </Form.Group>
+                {/* Modal novo produto */}
+                <Modal size="lg" show={showCreateProduct} onHide={handleCloseCreateProduct}>
+                    <Modal.Header closeButton>
+                        <Modal.Title>Criar um produto.</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <Row className="mb-3">
+                            <Col>
+                                <form>
+                                    <Form.Group>
+                                        <Row className="align-items-end">
+                                            <Col md={3} sm={1}>
+                                                <Image src={imagePreview} rounded fluid thumbnail />
+                                            </Col>
+                                            <Col>
+                                                <Form.File id="procuctImageFile" onChange={handleSelectImage} label="Escolher imagem" />
+                                            </Col>
+                                        </Row>
+                                    </Form.Group>
 
-                                            <Form.Group as={Col} controlId="newProductFormGridCategory">
-                                                <Form.Label>Categoria</Form.Label>
-                                                <Form.Control
-                                                    as="select"
-                                                    value={selectedProduct?.category.id}
-                                                    onChange={(e) => {
-                                                        if (selectedProduct) {
-                                                            setSelectedProduct({ ...selectedProduct, category: { ...selectedProduct.category, id: Number(e.target.value) } })
-                                                        }
-                                                    }}
-                                                >
-                                                    <option hidden>Escolha</option>
-                                                    {
-                                                        listCategories && listCategories.map((category: Category) => {
-                                                            return <option key={category.id} value={category.id}>{category.title}</option>
-                                                        })
-                                                    }
-
-                                                </Form.Control>
-                                            </Form.Group>
-                                        </Form.Row>
-
-                                        <Form.Row>
-                                            <Form.Group as={Col} controlId="newProductFormGridMaiority">
-                                                <Form.Check
-                                                    type="switch"
-                                                    id="custom-switch-maiority"
-                                                    label="Produto +18"
-                                                    onChange={() => {
-                                                        if (selectedProduct) {
-                                                            setSelectedProduct({ ...selectedProduct, maiority: !selectedProduct.maiority })
-                                                        }
-                                                    }}
-                                                />
-                                            </Form.Group>
-
-                                            <Form.Group as={Col} controlId="newProductFormGridPdv">
-                                                <Form.Control
-                                                    type="text"
-                                                    placeholder="Código PDV (opcional)"
-                                                />
-                                            </Form.Group>
-                                        </Form.Row>
-
-                                        <Form.Group controlId="newProductFormGridDescription">
-                                            <Form.Label>Descrição</Form.Label>
+                                    <Form.Row>
+                                        <Form.Group as={Col} controlId="newProductFormGridName">
+                                            <Form.Label>Título</Form.Label>
                                             <Form.Control
-                                                as="textarea"
-                                                rows={3}
-                                                onBlur={(e: FocusEvent<HTMLTextAreaElement>) => {
+                                                type="text"
+                                                placeholder="Ex: Pizzas"
+                                                onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
                                                     if (selectedProduct) {
-                                                        setSelectedProduct({ ...selectedProduct, description: e.target.value })
+                                                        setSelectedProduct({ ...selectedProduct, title: e.target.value })
                                                     }
                                                 }}
                                             />
-                                            <Form.Text className="text-muted text-right">1/250 caracteres.</Form.Text>
+                                            <Form.Text className="text-muted text-right">1/25 caracteres.</Form.Text>
                                         </Form.Group>
-                                    </form>
-                                </Col>
-                            </Row>
-                        </Modal.Body>
-                        <Modal.Footer>
-                            <Button variant="outline-danger" onClick={handleCloseCreateProduct}>
-                                Cancelar
+
+                                        <Form.Group as={Col} controlId="newProductFormGridCategory">
+                                            <Form.Label>Categoria</Form.Label>
+                                            <Form.Control
+                                                as="select"
+                                                value={selectedProduct?.category.id}
+                                                onChange={(e) => {
+                                                    if (selectedProduct) {
+                                                        setSelectedProduct({ ...selectedProduct, category: { ...selectedProduct.category, id: Number(e.target.value) } })
+                                                    }
+                                                }}
+                                            >
+                                                <option hidden>Escolha</option>
+                                                {
+                                                    listCategories && listCategories.map((category: Category) => {
+                                                        return <option key={category.id} value={category.id}>{category.title}</option>
+                                                    })
+                                                }
+
+                                            </Form.Control>
+                                        </Form.Group>
+                                    </Form.Row>
+
+                                    <Form.Row>
+                                        <Form.Group as={Col} controlId="newProductFormGridMaiority">
+                                            <Form.Check
+                                                type="switch"
+                                                id="custom-switch-maiority"
+                                                label="Produto +18"
+                                                onChange={() => {
+                                                    if (selectedProduct) {
+                                                        setSelectedProduct({ ...selectedProduct, maiority: !selectedProduct.maiority })
+                                                    }
+                                                }}
+                                            />
+                                        </Form.Group>
+
+                                        <Form.Group as={Col} controlId="newProductFormGridPdv">
+                                            <Form.Control
+                                                type="text"
+                                                placeholder="Código PDV (opcional)"
+                                            />
+                                        </Form.Group>
+                                    </Form.Row>
+
+                                    <Form.Group controlId="newProductFormGridDescription">
+                                        <Form.Label>Descrição</Form.Label>
+                                        <Form.Control
+                                            as="textarea"
+                                            rows={3}
+                                            onBlur={(e: FocusEvent<HTMLTextAreaElement>) => {
+                                                if (selectedProduct) {
+                                                    setSelectedProduct({ ...selectedProduct, description: e.target.value })
+                                                }
+                                            }}
+                                        />
+                                        <Form.Text className="text-muted text-right">1/250 caracteres.</Form.Text>
+                                    </Form.Group>
+                                </form>
+                            </Col>
+                        </Row>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="outline-danger" onClick={handleCloseCreateProduct}>
+                            Cancelar
                     </Button>
 
-                            <Button variant="danger"
-                                onClick={() => { handleCreateProduct() }}>
-                                Avançar{' '}
+                        <Button variant="danger"
+                            onClick={() => { handleCreateProduct() }}>
+                            Avançar{' '}
+                            <Spinner
+                                as="span"
+                                animation="border"
+                                size="sm"
+                                role="status"
+                                aria-hidden="true"
+                                style={{ display: spinnerCreateProduct }}
+                            />
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
+
+                {/* Modal editar produto */}
+                <Modal size="lg" show={showUpdateProduct} onHide={handleCloseUpdateProduct} >
+                    <Modal.Header closeButton>
+                        <Modal.Title>Editar produto</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <Tabs
+                            className="mt-3 mb-3"
+                            defaultActiveKey="details"
+                            id="tab-selected-product"
+                            onSelect={(k) => k && setKeySelectedProduct(k)}
+                        >
+                            <Tab eventKey="details" title={tabTitleDetails}>
+                                <Row className="mb-3">
+                                    <Col>
+                                        <form>
+                                            <Form.Group>
+                                                <Row className="align-items-end">
+                                                    <Col md={3} sm={1}>
+                                                        <Image src={imagePreview} rounded fluid thumbnail />
+                                                    </Col>
+                                                    <Col>
+                                                        <Form.File id="procuctImageFile" onChange={handleSelectImage} label="Escolher imagem" />
+                                                    </Col>
+                                                </Row>
+                                            </Form.Group>
+
+                                            <Form.Row>
+                                                <Form.Group as={Col} controlId={`ProductFormGridName${selectedProduct?.id}`}>
+                                                    <Form.Label>Nome</Form.Label>
+                                                    <Form.Control
+                                                        type="text"
+                                                        placeholder="Ex: Pizzas"
+                                                        defaultValue={selectedProduct?.title}
+                                                        onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
+                                                            if (selectedProduct) {
+                                                                setSelectedProduct({ ...selectedProduct, title: e.target.value })
+                                                            }
+                                                        }}
+                                                    />
+                                                    <Form.Text className="text-muted text-right">1/25 caracteres.</Form.Text>
+                                                </Form.Group>
+
+                                                <Form.Group as={Col} controlId={`ProductFormGridCategory${selectedProduct?.id}`}>
+                                                    <Form.Label>Categoria</Form.Label>
+                                                    <Form.Control
+                                                        as="select"
+                                                        value={selectedProduct?.category.id}
+                                                        onChange={(e) => {
+                                                            if (selectedProduct) {
+                                                                setSelectedProduct({ ...selectedProduct, category: { ...selectedProduct.category, id: Number(e.target.value) } })
+                                                            }
+                                                        }}
+                                                    >
+                                                        {
+                                                            listCategories && listCategories.map((category: Category) => {
+                                                                return <option key={category.id} value={category.id} >{category.title}</option>
+                                                            })
+                                                        }
+
+                                                    </Form.Control>
+                                                </Form.Group>
+                                            </Form.Row>
+
+                                            <Form.Row>
+                                                <Form.Group as={Col} controlId={`ProductFormGridMaiority${selectedProduct?.id}`}>
+                                                    <Form.Check
+                                                        type="switch"
+                                                        id="custom-switch-maiority"
+                                                        label="Produto +18"
+                                                        checked={selectedProduct?.maiority}
+                                                        onChange={() => {
+                                                            if (selectedProduct) {
+                                                                setSelectedProduct({ ...selectedProduct, maiority: !selectedProduct.maiority })
+                                                            }
+                                                        }}
+                                                    />
+                                                </Form.Group>
+
+                                                <Form.Group as={Col} controlId={`ProductFormGridPdv${selectedProduct?.id}`}>
+                                                    <Form.Control
+                                                        type="text"
+                                                        placeholder="Código PDV (opcional)"
+                                                        defaultValue={selectedProduct?.code}
+                                                        onBlur={(e: any) => {
+                                                            if (selectedProduct) {
+                                                                setSelectedProduct({ ...selectedProduct, code: e.target.value })
+                                                            }
+                                                        }}
+                                                    />
+                                                </Form.Group>
+                                            </Form.Row>
+
+                                            <Form.Group controlId={`ProductFormGridDescription${selectedProduct?.id}`}>
+                                                <Form.Label>Descrição</Form.Label>
+                                                <Form.Control
+                                                    as="textarea"
+                                                    rows={3}
+                                                    defaultValue={selectedProduct?.description}
+                                                    onBlur={(e: FocusEvent<HTMLTextAreaElement>) => {
+                                                        if (selectedProduct) {
+                                                            setSelectedProduct({ ...selectedProduct, description: e.target.value })
+                                                        }
+                                                    }}
+                                                />
+                                                <Form.Text className="text-muted text-right">1/250 caracteres.</Form.Text>
+                                            </Form.Group>
+
+                                            <Form.Group>
+                                                <Row>
+                                                    <Col md={4} sm={1}>
+                                                        <Form.Check
+                                                            type="switch"
+                                                            id="custom-switch-price-one"
+                                                            label="Preço único"
+                                                            checked={selectedProduct?.price_one}
+                                                            onChange={() => {
+                                                                if (selectedProduct) {
+                                                                    setSelectedProduct({ ...selectedProduct, price_one: !selectedProduct.price_one })
+                                                                }
+                                                            }}
+                                                        />
+                                                    </Col>
+
+                                                    <Col md={4} sm={1} style={{ display: fieldProductValue }}>
+                                                        {
+                                                            selectedProduct && <InputMask
+                                                                mask="currency"
+                                                                prefix="R$"
+                                                                defaultValue={Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(selectedProduct.price)}
+                                                                onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
+                                                                    if (selectedProduct) {
+                                                                        setSelectedProduct({ ...selectedProduct, price: Number(e.target.value.replace(".", "").replace(",", ".")) })
+                                                                    }
+                                                                }}
+                                                            />
+                                                        }
+                                                    </Col>
+
+                                                    <Col md={4} sm={1} style={{ display: buttonAddProductValue }}>
+                                                        <Button variant="outline-danger" onClick={handleAddProductValue}>
+                                                            <BsPlusSquare /> Adicionar valor
+                                                            </Button>
+                                                    </Col>
+
+                                                    <Col md={4} sm={1}>
+                                                        <Form.Check
+                                                            type="switch"
+                                                            id="custom-switch-on_request"
+                                                            label="Preço sob consulta"
+                                                            checked={selectedProduct?.on_request}
+                                                            onChange={() => {
+                                                                if (selectedProduct) {
+                                                                    setSelectedProduct({ ...selectedProduct, on_request: !selectedProduct.on_request })
+                                                                }
+                                                            }}
+                                                        />
+                                                    </Col>
+                                                </Row>
+                                            </Form.Group>
+
+                                            {
+                                                buttonAddProductValue === 'inline-block' && listProductValues && listProductValues.map((productValue, index) => {
+                                                    return <ProductValueItem
+                                                        key={index}
+                                                        productValue={productValue}
+                                                        handleUpdateProductValue={handleUpdateProductValue}
+                                                        handleDeleteProductValue={handleDeleteProductValue}
+                                                    />
+                                                })
+                                            }
+                                        </form>
+                                    </Col>
+                                </Row>
+                            </Tab>
+
+                            <Tab eventKey="complements" title={tabTitleComplements}>
+                                {
+                                    !showComplementsDnd ? <>
+                                        <Row className="mb-3">
+                                            <Col>
+                                                <Button
+                                                    variant="outline-danger"
+                                                    className="button-link"
+                                                    onClick={handleAddProductCategory}
+                                                >
+                                                    <BsPlusSquare /> Adicionar categoria
+                                                    </Button>
+                                            </Col>
+                                            <Col>
+                                                <Button
+                                                    variant="outline-danger"
+                                                    className="button-link"
+                                                    onClick={() => setShowComplementsDnd(!showComplementsDnd)}
+                                                >
+                                                    <BsFilterLeft /> Reordenar itens
+                                                    </Button>
+                                            </Col>
+                                            <Col>
+                                                <Button
+                                                    variant="outline-danger"
+                                                    className="button-link"
+                                                    style={{ display: 'none' }}
+                                                >
+                                                    <BsArrowRepeat /> Usar de outro produto
+                                                    </Button>
+                                            </Col>
+                                        </Row>
+                                        <form>
+                                            {
+                                                selectedProduct && selectedProduct.categoriesAdditional.map((productCategory, index) => {
+                                                    return <ProductCategoryItem
+                                                        key={index}
+                                                        productCategory={productCategory}
+                                                    />
+                                                })
+                                            }
+                                        </form>
+                                    </> : <Tab.Container id="list-group-tabs-order-complements">
+                                        <Row>
+                                            <Col>
+                                                <DragDropContext onDragEnd={handleOnDragEndProductCategory}>
+                                                    <Droppable droppableId="product-categories">
+                                                        {provided => (
+                                                            <div
+                                                                {...provided.droppableProps}
+                                                                ref={provided.innerRef}
+                                                            >
+                                                                <ListGroup>
+                                                                    {
+                                                                        listSelectedProductCategoriesDnd && listSelectedProductCategoriesDnd.map((productCategory, index) => {
+                                                                            return <Draggable
+                                                                                key={productCategory.id}
+                                                                                draggableId={String(productCategory.id)}
+                                                                                index={index}
+                                                                            >
+                                                                                {provided => (
+                                                                                    <div
+                                                                                        {...provided.draggableProps}
+                                                                                        {...provided.dragHandleProps}
+                                                                                        ref={provided.innerRef}
+                                                                                    >
+                                                                                        <ProductCategoryDndItem productCategory={productCategory} />
+                                                                                    </div>
+                                                                                )}
+                                                                            </Draggable>
+
+                                                                        })
+                                                                    }
+                                                                </ListGroup>
+                                                                {provided.placeholder}
+                                                            </div>
+                                                        )}
+                                                    </Droppable>
+                                                </DragDropContext>
+                                            </Col>
+
+                                            <Col>
+                                                <Tab.Content>
+                                                    {
+                                                        listSelectedProductCategoriesDnd && listSelectedProductCategoriesDnd.map((productCategory) => {
+                                                            return <Tab.Pane key={productCategory.id} eventKey={`#${productCategory.id}`}>
+                                                                <DragDropContext onDragEnd={(result) => { handleOnDragEndProductAdditionals(result, productCategory.id) }}>
+                                                                    <Droppable droppableId={`product-additional-${productCategory.id}`}>
+                                                                        {provided => (
+                                                                            <div
+                                                                                {...provided.droppableProps}
+                                                                                ref={provided.innerRef}
+                                                                            >
+                                                                                {
+                                                                                    productCategory.productAdditional.map((productAdditional, index) => {
+                                                                                        return <Draggable key={productAdditional.id} draggableId={String(productAdditional.id)} index={index}>
+                                                                                            {provided => (
+                                                                                                <div
+                                                                                                    {...provided.draggableProps}
+                                                                                                    {...provided.dragHandleProps}
+                                                                                                    ref={provided.innerRef}
+                                                                                                >
+
+                                                                                                    <ProductAdditionalDndItem key={productAdditional.id} productAdditional={productAdditional} />
+
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </Draggable>
+                                                                                    })
+                                                                                }
+                                                                                {provided.placeholder}
+                                                                            </div>
+                                                                        )}
+                                                                    </Droppable>
+                                                                </DragDropContext>
+                                                            </Tab.Pane>
+                                                        })
+                                                    }
+                                                </Tab.Content>
+                                            </Col>
+                                        </Row>
+                                    </Tab.Container>
+                                }
+                            </Tab>
+
+                            <Tab className="mb-3" eventKey="availables" title={tabTitleAvailables}>
+                                <Form>
+                                    <Row>
+                                        <Col>
+                                            <Form.Group controlId={`availableFormGridAll${selectedProduct?.id}`}>
+                                                <div className='custom-control custom-switch'>
+                                                    <input
+                                                        type='checkbox'
+                                                        className='custom-control-input'
+                                                        id='availableFormSwitchAll'
+                                                        checked={selectedProduct?.available_all}
+                                                        onChange={() => {
+                                                            if (selectedProduct) {
+                                                                handleTabAvailables(true);
+                                                                setSelectedProduct({ ...selectedProduct, available_all: !selectedProduct.available_all });
+                                                            }
+                                                        }}
+                                                    />
+                                                    <label className='custom-control-label' htmlFor='availableFormSwitchAll'>Disponível em todos os dias da loja.</label>
+                                                </div>
+                                            </Form.Group>
+                                        </Col>
+                                    </Row>
+                                    {
+                                        selectedProduct && !selectedProduct.available_all && <>
+                                            <Row className='mb-3'>
+                                                {
+                                                    restaurantOpenedDays && restaurantOpenedDays.map(openedDay => {
+                                                        const productAvailable = selectedProduct.availables.find(item => { return item.week_day === openedDay.week_day });
+
+                                                        return openedDay.opened && productAvailable && <Col key={openedDay.id}>
+                                                            <div className='custom-control custom-switch'>
+                                                                <input
+                                                                    type='checkbox'
+                                                                    className='custom-control-input'
+                                                                    id={`availableSwitch${openedDay.week_day}`}
+                                                                    checked={productAvailable.available}
+                                                                    onChange={() => { handleSwitchProductAvailable(productAvailable.id) }}
+                                                                />
+                                                                <label
+                                                                    className='custom-control-label'
+                                                                    htmlFor={`availableSwitch${openedDay.week_day}`}
+                                                                >
+                                                                    {dayOfWeekAsInteger(openedDay.week_day)}
+                                                                </label>
+                                                            </div>
+                                                        </Col>
+                                                    })
+                                                }
+                                            </Row>
+                                            <Row>
+                                                <Col>
+                                                    <Tabs id="availableTab">
+                                                        {
+                                                            restaurantOpenedDays && restaurantOpenedDays.map(openedDay => {
+                                                                const productAvailable = selectedProduct.availables.find(item => { return item.week_day === openedDay.week_day });
+
+                                                                return openedDay.opened && productAvailable && productAvailable.available && <Tab
+                                                                    key={productAvailable.id}
+                                                                    eventKey={String(productAvailable.week_day)}
+                                                                    title={dayOfWeekAsInteger(productAvailable.week_day)}
+                                                                >
+                                                                    <ProductAvailableItem productAvailable={productAvailable} />
+                                                                </Tab>
+                                                            })
+                                                        }
+                                                    </Tabs>
+                                                </Col>
+                                            </Row>
+                                        </>
+                                    }
+                                </Form>
+                            </Tab>
+                            <Tab eventKey="sale" title={tabTitleSale}>
+                                <Form>
+                                    <Row className="align-items-center">
+                                        <Col sm={5}>
+                                            <Form.Group className="text-center" controlId="saleFormGridAll">
+                                                <div className='custom-control custom-switch'>
+                                                    <input
+                                                        type='checkbox'
+                                                        className='custom-control-input'
+                                                        id='saleFormSwitch'
+                                                        checked={selectedProduct?.discount}
+                                                        onChange={() => { handleProductDiscount('discount', '') }}
+                                                    />
+                                                    <label className='custom-control-label' htmlFor='saleFormSwitch'>Ativar promoção</label>
+                                                </div>
+                                            </Form.Group>
+                                        </Col>
+                                        {
+                                            selectedProduct && selectedProduct.discount && <Col className="text-right" sm={7}>
+                                                <Form.Group as={Row} controlId={`saleFormHorizontalOldPrice${selectedProduct?.id}`}>
+                                                    <Form.Label column sm={6}>Valor original:</Form.Label>
+                                                    <Col sm={4}>
+                                                        <Form.Control
+                                                            type="text"
+                                                            placeholder="R$ 0,00"
+                                                            readOnly
+                                                            defaultValue={Intl.NumberFormat(
+                                                                'pt-BR',
+                                                                { style: 'currency', currency: 'BRL' }
+                                                            ).format(selectedProduct.price)}
+                                                        />
+                                                    </Col>
+                                                </Form.Group>
+                                                <Form.Group as={Row} controlId={`saleFormHorizontalNewPrice${selectedProduct?.id}`}>
+                                                    <Form.Label column sm={6}>Valor promocional:</Form.Label>
+                                                    <Col sm={4}>
+                                                        <InputMask
+                                                            mask="currency"
+                                                            prefix="R$"
+                                                            defaultValue={Intl.NumberFormat(
+                                                                'pt-BR',
+                                                                { style: 'currency', currency: 'BRL' }
+                                                            ).format(selectedProduct.discount_price).replace("R$ ", "")}
+                                                            onBlur={(e) => { handleProductDiscount('discount_price', e.target.value) }}
+                                                        />
+                                                    </Col>
+                                                </Form.Group>
+                                            </Col>
+                                        }
+                                    </Row>
+                                </Form>
+                            </Tab>
+                        </Tabs>
+                    </Modal.Body>
+
+                    {
+                        !showComplementsDnd ? <Modal.Footer>
+                            <Button variant="outline-danger" onClick={handleCloseUpdateProduct}>
+                                Cancelar
+                                </Button>
+
+                            <Button
+                                variant="danger"
+                                onClick={() => { handleButtonsDeleteProduct() }}
+                                style={{ display: buttonDeleteProduct }}
+                            >Excluir
+                                </Button>
+
+                            <Button variant="warning"
+                                style={{ display: buttonDeleteYesProduct }}
+                                onClick={() => { handleDeleteProduct() }}
+                            >
+                                Confirmar{' '}
                                 <Spinner
                                     as="span"
                                     animation="border"
                                     size="sm"
                                     role="status"
                                     aria-hidden="true"
-                                    style={{ display: spinnerCreateProduct }}
+                                    style={{ display: spinnerDeleteProduct }}
                                 />
                             </Button>
-                        </Modal.Footer>
-                    </Modal>
-
-                    {/* Modal editar produto */}
-                    <Modal size="lg" show={showUpdateProduct} onHide={handleCloseUpdateProduct} >
-                        <Modal.Header closeButton>
-                            <Modal.Title>Editar produto</Modal.Title>
-                        </Modal.Header>
-                        <Modal.Body>
-                            <Tabs
-                                className="mt-3 mb-3"
-                                defaultActiveKey="details"
-                                id="tab-selected-product"
-                                onSelect={(k) => k && setKeySelectedProduct(k)}
-                            >
-                                <Tab eventKey="details" title={tabTitleDetails}>
-                                    <Row className="mb-3">
-                                        <Col>
-                                            <form>
-                                                <Form.Group>
-                                                    <Row className="align-items-end">
-                                                        <Col md={3} sm={1}>
-                                                            <Image src={imagePreview} rounded fluid thumbnail />
-                                                        </Col>
-                                                        <Col>
-                                                            <Form.File id="procuctImageFile" onChange={handleSelectImage} label="Escolher imagem" />
-                                                        </Col>
-                                                    </Row>
-                                                </Form.Group>
-
-                                                <Form.Row>
-                                                    <Form.Group as={Col} controlId={`ProductFormGridName${selectedProduct?.id}`}>
-                                                        <Form.Label>Nome</Form.Label>
-                                                        <Form.Control
-                                                            type="text"
-                                                            placeholder="Ex: Pizzas"
-                                                            defaultValue={selectedProduct?.title}
-                                                            onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
-                                                                if (selectedProduct) {
-                                                                    setSelectedProduct({ ...selectedProduct, title: e.target.value })
-                                                                }
-                                                            }}
-                                                        />
-                                                        <Form.Text className="text-muted text-right">1/25 caracteres.</Form.Text>
-                                                    </Form.Group>
-
-                                                    <Form.Group as={Col} controlId={`ProductFormGridCategory${selectedProduct?.id}`}>
-                                                        <Form.Label>Categoria</Form.Label>
-                                                        <Form.Control
-                                                            as="select"
-                                                            value={selectedProduct?.category.id}
-                                                            onChange={(e) => {
-                                                                if (selectedProduct) {
-                                                                    setSelectedProduct({ ...selectedProduct, category: { ...selectedProduct.category, id: Number(e.target.value) } })
-                                                                }
-                                                            }}
-                                                        >
-                                                            {
-                                                                listCategories && listCategories.map((category: Category) => {
-                                                                    return <option key={category.id} value={category.id} >{category.title}</option>
-                                                                })
-                                                            }
-
-                                                        </Form.Control>
-                                                    </Form.Group>
-                                                </Form.Row>
-
-                                                <Form.Row>
-                                                    <Form.Group as={Col} controlId={`ProductFormGridMaiority${selectedProduct?.id}`}>
-                                                        <Form.Check
-                                                            type="switch"
-                                                            id="custom-switch-maiority"
-                                                            label="Produto +18"
-                                                            checked={selectedProduct?.maiority}
-                                                            onChange={() => {
-                                                                if (selectedProduct) {
-                                                                    setSelectedProduct({ ...selectedProduct, maiority: !selectedProduct.maiority })
-                                                                }
-                                                            }}
-                                                        />
-                                                    </Form.Group>
-
-                                                    <Form.Group as={Col} controlId={`ProductFormGridPdv${selectedProduct?.id}`}>
-                                                        <Form.Control
-                                                            type="text"
-                                                            placeholder="Código PDV (opcional)"
-                                                            defaultValue={selectedProduct?.code}
-                                                            onBlur={(e: any) => {
-                                                                if (selectedProduct) {
-                                                                    setSelectedProduct({ ...selectedProduct, code: e.target.value })
-                                                                }
-                                                            }}
-                                                        />
-                                                    </Form.Group>
-                                                </Form.Row>
-
-                                                <Form.Group controlId={`ProductFormGridDescription${selectedProduct?.id}`}>
-                                                    <Form.Label>Descrição</Form.Label>
-                                                    <Form.Control
-                                                        as="textarea"
-                                                        rows={3}
-                                                        defaultValue={selectedProduct?.description}
-                                                        onBlur={(e: FocusEvent<HTMLTextAreaElement>) => {
-                                                            if (selectedProduct) {
-                                                                setSelectedProduct({ ...selectedProduct, description: e.target.value })
-                                                            }
-                                                        }}
-                                                    />
-                                                    <Form.Text className="text-muted text-right">1/250 caracteres.</Form.Text>
-                                                </Form.Group>
-
-                                                <Form.Group>
-                                                    <Row>
-                                                        <Col md={4} sm={1}>
-                                                            <Form.Check
-                                                                type="switch"
-                                                                id="custom-switch-price-one"
-                                                                label="Preço único"
-                                                                checked={selectedProduct?.price_one}
-                                                                onChange={() => {
-                                                                    if (selectedProduct) {
-                                                                        setSelectedProduct({ ...selectedProduct, price_one: !selectedProduct.price_one })
-                                                                    }
-                                                                }}
-                                                            />
-                                                        </Col>
-
-                                                        <Col md={4} sm={1} style={{ display: fieldProductValue }}>
-                                                            {
-                                                                selectedProduct && <InputMask
-                                                                    mask="currency"
-                                                                    prefix="R$"
-                                                                    defaultValue={Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(selectedProduct.price)}
-                                                                    onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
-                                                                        if (selectedProduct) {
-                                                                            setSelectedProduct({ ...selectedProduct, price: Number(e.target.value.replace(".", "").replace(",", ".")) })
-                                                                        }
-                                                                    }}
-                                                                />
-                                                            }
-                                                        </Col>
-
-                                                        <Col md={4} sm={1} style={{ display: buttonAddProductValue }}>
-                                                            <Button variant="outline-danger" onClick={handleAddProductValue}>
-                                                                <BsPlusSquare /> Adicionar valor
-                                                            </Button>
-                                                        </Col>
-
-                                                        <Col md={4} sm={1}>
-                                                            <Form.Check
-                                                                type="switch"
-                                                                id="custom-switch-on_request"
-                                                                label="Preço sob consulta"
-                                                                checked={selectedProduct?.on_request}
-                                                                onChange={() => {
-                                                                    if (selectedProduct) {
-                                                                        setSelectedProduct({ ...selectedProduct, on_request: !selectedProduct.on_request })
-                                                                    }
-                                                                }}
-                                                            />
-                                                        </Col>
-                                                    </Row>
-                                                </Form.Group>
-
-                                                {
-                                                    buttonAddProductValue === 'inline-block' && listProductValues && listProductValues.map((productValue, index) => {
-                                                        return <ProductValueItem
-                                                            key={index}
-                                                            productValue={productValue}
-                                                            handleUpdateProductValue={handleUpdateProductValue}
-                                                            handleDeleteProductValue={handleDeleteProductValue}
-                                                        />
-                                                    })
-                                                }
-                                            </form>
-                                        </Col>
-                                    </Row>
-                                </Tab>
-
-                                <Tab eventKey="complements" title={tabTitleComplements}>
-                                    {
-                                        !showComplementsDnd ? <>
-                                            <Row className="mb-3">
-                                                <Col>
-                                                    <Button
-                                                        variant="outline-danger"
-                                                        className="button-link"
-                                                        onClick={handleAddProductCategory}
-                                                    >
-                                                        <BsPlusSquare /> Adicionar categoria
-                                                    </Button>
-                                                </Col>
-                                                <Col>
-                                                    <Button
-                                                        variant="outline-danger"
-                                                        className="button-link"
-                                                        onClick={() => setShowComplementsDnd(!showComplementsDnd)}
-                                                    >
-                                                        <BsFilterLeft /> Reordenar itens
-                                                    </Button>
-                                                </Col>
-                                                <Col>
-                                                    <Button
-                                                        variant="outline-danger"
-                                                        className="button-link"
-                                                        style={{ display: 'none' }}
-                                                    >
-                                                        <BsArrowRepeat /> Usar de outro produto
-                                                    </Button>
-                                                </Col>
-                                            </Row>
-                                            <form>
-                                                {
-                                                    selectedProduct && selectedProduct.categoriesAdditional.map((productCategory, index) => {
-                                                        return <ProductCategoryItem
-                                                            key={index}
-                                                            productCategory={productCategory}
-                                                        />
-                                                    })
-                                                }
-                                            </form>
-                                        </> : <Tab.Container id="list-group-tabs-order-complements">
-                                            <Row>
-                                                <ContextProductCategoryDnd.Provider value={{ moveCategoryOrder }}>
-                                                    <Col>
-                                                        <ListGroup>
-                                                            {
-                                                                listSelectedProductCategoriesDnd && listSelectedProductCategoriesDnd.map((productCategory, index) => {
-                                                                    return <ProductCategoryDndItem key={productCategory.id} productCategory={productCategory} index={index} />
-                                                                })
-                                                            }
-                                                        </ListGroup>
-                                                    </Col>
-                                                </ContextProductCategoryDnd.Provider>
-
-                                                <ContextProductAdditionalDnd.Provider value={{ moveAdditionalOrder }}>
-                                                    <Col>
-                                                        <Tab.Content>
-                                                            {
-                                                                listSelectedProductCategoriesDnd && listSelectedProductCategoriesDnd.map((productCategory) => {
-                                                                    return <Tab.Pane key={productCategory.id} eventKey={`#${productCategory.id}`}>
-                                                                        {
-                                                                            productCategory.productAdditional.map((productAdditional, index) => {
-                                                                                return <ProductAdditionalDndItem key={productAdditional.id} productAdditional={productAdditional} index={index} />
-                                                                            })
-                                                                        }
-                                                                    </Tab.Pane>
-                                                                })
-                                                            }
-                                                        </Tab.Content>
-                                                    </Col>
-                                                </ContextProductAdditionalDnd.Provider>
-                                            </Row>
-                                        </Tab.Container>
-                                    }
-                                </Tab>
-
-                                <Tab className="mb-3" eventKey="availables" title={tabTitleAvailables}>
-                                    <Form>
-                                        <Row>
-                                            <Col>
-                                                <Form.Group controlId={`availableFormGridAll${selectedProduct?.id}`}>
-                                                    <div className='custom-control custom-switch'>
-                                                        <input
-                                                            type='checkbox'
-                                                            className='custom-control-input'
-                                                            id='availableFormSwitchAll'
-                                                            checked={selectedProduct?.available_all}
-                                                            onChange={() => {
-                                                                if (selectedProduct) {
-                                                                    handleTabAvailables(true);
-                                                                    setSelectedProduct({ ...selectedProduct, available_all: !selectedProduct.available_all });
-                                                                }
-                                                            }}
-                                                        />
-                                                        <label className='custom-control-label' htmlFor='availableFormSwitchAll'>Disponível em todos os dias da loja.</label>
-                                                    </div>
-                                                </Form.Group>
-                                            </Col>
-                                        </Row>
-                                        {
-                                            selectedProduct && !selectedProduct.available_all && <>
-                                                <Row className='mb-3'>
-                                                    {
-                                                        restaurantOpenedDays && restaurantOpenedDays.map(openedDay => {
-                                                            const productAvailable = selectedProduct.availables.find(item => { return item.week_day === openedDay.week_day });
-
-                                                            return openedDay.opened && productAvailable && <Col key={openedDay.id}>
-                                                                <div className='custom-control custom-switch'>
-                                                                    <input
-                                                                        type='checkbox'
-                                                                        className='custom-control-input'
-                                                                        id={`availableSwitch${openedDay.week_day}`}
-                                                                        checked={productAvailable.available}
-                                                                        onChange={() => { handleSwitchProductAvailable(productAvailable.id) }}
-                                                                    />
-                                                                    <label
-                                                                        className='custom-control-label'
-                                                                        htmlFor={`availableSwitch${openedDay.week_day}`}
-                                                                    >
-                                                                        {dayOfWeekAsInteger(openedDay.week_day)}
-                                                                    </label>
-                                                                </div>
-                                                            </Col>
-                                                        })
-                                                    }
-
-                                                </Row>
-                                                <Row>
-                                                    <Col>
-                                                        <Tabs id="availableTab">
-                                                            {
-                                                                restaurantOpenedDays && restaurantOpenedDays.map(openedDay => {
-                                                                    const productAvailable = selectedProduct.availables.find(item => { return item.week_day === openedDay.week_day });
-
-                                                                    return openedDay.opened && productAvailable && productAvailable.available && <Tab
-                                                                        key={productAvailable.id}
-                                                                        eventKey={String(productAvailable.week_day)}
-                                                                        title={dayOfWeekAsInteger(productAvailable.week_day)}
-                                                                    >
-                                                                        <ProductAvailableItem productAvailable={productAvailable} />
-                                                                    </Tab>
-                                                                })
-                                                            }
-                                                        </Tabs>
-                                                    </Col>
-                                                </Row>
-                                            </>
-                                        }
-                                    </Form>
-                                </Tab>
-                                <Tab eventKey="sale" title={tabTitleSale}>
-                                    <Form>
-                                        <Row className="align-items-center">
-                                            <Col sm={5}>
-                                                <Form.Group className="text-center" controlId="saleFormGridAll">
-                                                    <div className='custom-control custom-switch'>
-                                                        <input
-                                                            type='checkbox'
-                                                            className='custom-control-input'
-                                                            id='saleFormSwitch'
-                                                            checked={selectedProduct?.discount}
-                                                            onChange={() => { handleProductDiscount('discount', '') }}
-                                                        />
-                                                        <label className='custom-control-label' htmlFor='saleFormSwitch'>Ativar promoção</label>
-                                                    </div>
-                                                </Form.Group>
-                                            </Col>
-                                            {
-                                                selectedProduct && selectedProduct.discount && <Col className="text-right" sm={7}>
-                                                    <Form.Group as={Row} controlId={`saleFormHorizontalOldPrice${selectedProduct?.id}`}>
-                                                        <Form.Label column sm={6}>Valor original:</Form.Label>
-                                                        <Col sm={4}>
-                                                            <Form.Control
-                                                                type="text"
-                                                                placeholder="R$ 0,00"
-                                                                readOnly
-                                                                defaultValue={Intl.NumberFormat(
-                                                                    'pt-BR',
-                                                                    { style: 'currency', currency: 'BRL' }
-                                                                ).format(selectedProduct.price)}
-                                                            />
-                                                        </Col>
-                                                    </Form.Group>
-                                                    <Form.Group as={Row} controlId={`saleFormHorizontalNewPrice${selectedProduct?.id}`}>
-                                                        <Form.Label column sm={6}>Valor promocional:</Form.Label>
-                                                        <Col sm={4}>
-                                                            <InputMask
-                                                                mask="currency"
-                                                                prefix="R$"
-                                                                defaultValue={Intl.NumberFormat(
-                                                                    'pt-BR',
-                                                                    { style: 'currency', currency: 'BRL' }
-                                                                ).format(selectedProduct.discount_price).replace("R$ ", "")}
-                                                                onBlur={(e) => { handleProductDiscount('discount_price', e.target.value) }}
-                                                            />
-                                                        </Col>
-                                                    </Form.Group>
-                                                </Col>
-                                            }
-                                        </Row>
-                                    </Form>
-                                </Tab>
-                            </Tabs>
-                        </Modal.Body>
-
-                        {
-                            !showComplementsDnd ? <Modal.Footer>
-                                <Button variant="outline-danger" onClick={handleCloseUpdateProduct}>
-                                    Cancelar
-                                </Button>
-
-                                <Button
-                                    variant="danger"
-                                    onClick={() => { handleButtonsDeleteProduct() }}
-                                    style={{ display: buttonDeleteProduct }}
-                                >Excluir
-                                </Button>
-
-                                <Button variant="warning"
-                                    style={{ display: buttonDeleteYesProduct }}
-                                    onClick={() => { handleDeleteProduct() }}
-                                >
-                                    Confirmar{' '}
-                                    <Spinner
-                                        as="span"
-                                        animation="border"
-                                        size="sm"
-                                        role="status"
-                                        aria-hidden="true"
-                                        style={{ display: spinnerDeleteProduct }}
-                                    />
-                                </Button>
-
-                                <Button variant="danger"
-                                    onClick={() => { handleUpdateProduct() }}>
-                                    Salvar{' '}
-                                    <Spinner
-                                        as="span"
-                                        animation="border"
-                                        size="sm"
-                                        role="status"
-                                        aria-hidden="true"
-                                        style={{ display: spinnerCreateProduct }}
-                                    />
-                                </Button>
-                            </Modal.Footer> : <Modal.Footer>
-                                <Button
-                                    variant="outline-danger"
-                                    onClick={() => setShowComplementsDnd(!showComplementsDnd)}
-                                >Cancelar
-                                                    </Button>
-
-                                <Button
-                                    variant="danger"
-                                    onClick={saveOrderListProductCategoriesDnd}
-                                >Aplicar
-                                                    </Button>
-                            </Modal.Footer>
-                        }
-                    </Modal>
-
-                    {/* Modal reordenar produtos */}
-                    <Modal show={showSortProduct} onHide={handleCloseSortProduct}>
-                        <Modal.Header closeButton>
-                            <Modal.Title>Reordenar a lista de produtos.</Modal.Title>
-                        </Modal.Header>
-                        <Modal.Body>
-                            <Row className="mb-3">
-                                <Col>
-                                    <ListGroup>
-                                        {
-                                            listSelectedProducts && listSelectedProducts.map((product, index) => {
-                                                return <ProductDndItem key={product.id} product={product} index={index} />
-                                            })
-                                        }
-                                    </ListGroup>
-                                </Col>
-                            </Row>
-                        </Modal.Body>
-                        <Modal.Footer>
-                            <Button variant="outline-danger" onClick={handleCloseSortProduct}>
-                                Cancelar
-                    </Button>
 
                             <Button variant="danger"
-                                onClick={() => { saveOrder() }}>
+                                onClick={() => { handleUpdateProduct() }}>
                                 Salvar{' '}
                                 <Spinner
                                     as="span"
@@ -1582,10 +1577,83 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
                                     style={{ display: spinnerCreateProduct }}
                                 />
                             </Button>
+                        </Modal.Footer> : <Modal.Footer>
+                            <Button variant="outline-danger" onClick={() => {
+                                setShowComplementsDnd(!showComplementsDnd);
+                                selectedProduct && setListSelectedProductCategoriesDnd(selectedProduct.categoriesAdditional);
+                            }}
+                            >
+                                Cancelar
+                            </Button>
+
+                            <Button variant="danger" onClick={saveOrderListProductCategoriesDnd} >
+                                Aplicar
+                            </Button>
                         </Modal.Footer>
-                    </Modal>
-                </div >
-            </ContextProductDnd.Provider>
+                    }
+                </Modal>
+
+                {/* Modal reordenar produtos */}
+                <Modal show={showSortProduct} onHide={handleCloseSortProduct}>
+                    <Modal.Header closeButton>
+                        <Modal.Title>Reordenar a lista de produtos.</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <Row className="mb-3">
+                            <Col>
+                                <DragDropContext onDragEnd={handleOnDragEnd}>
+                                    <Droppable droppableId="products">
+                                        {provided => (
+                                            <div
+                                                {...provided.droppableProps}
+                                                ref={provided.innerRef}
+                                            >
+                                                <ListGroup>
+                                                    {
+                                                        listSelectedProducts && listSelectedProducts.map((product, index) => {
+                                                            return <Draggable key={product.id} draggableId={String(product.id)} index={index}>
+                                                                {provided => (
+                                                                    <div
+                                                                        {...provided.draggableProps}
+                                                                        {...provided.dragHandleProps}
+                                                                        ref={provided.innerRef}
+                                                                    >
+                                                                        <ProductDndItem product={product} />
+                                                                    </div>
+                                                                )}
+
+                                                            </Draggable>
+                                                        })
+                                                    }
+                                                </ListGroup>
+                                                {provided.placeholder}
+                                            </div>
+                                        )}
+                                    </Droppable>
+                                </DragDropContext>
+                            </Col>
+                        </Row>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="outline-danger" onClick={handleCloseSortProduct}>
+                            Cancelar
+                    </Button>
+
+                        <Button variant="danger"
+                            onClick={() => { listSelectedProducts && saveOrder(listSelectedProducts) }}>
+                            Salvar{' '}
+                            <Spinner
+                                as="span"
+                                animation="border"
+                                size="sm"
+                                role="status"
+                                aria-hidden="true"
+                                style={{ display: spinnerCreateProduct }}
+                            />
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
+            </div >
         </ContextSelectedProduct.Provider >
     )
 };
