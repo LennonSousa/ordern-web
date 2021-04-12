@@ -117,7 +117,7 @@ const ProductAvailables: React.FC<ProductAvailableProps> = ({ productAvailable }
             {
                 !productAvailableItem.all_day && <Row>
                     <Col>
-                        <Form.Group as={Row} className="align-items-center text-center" controlId="availableFormGridSunFirst">
+                        <Form.Group as={Row} className="align-items-center text-center">
                             <Col sm={3}>
                                 <div className='custom-control custom-switch'>
                                     <input
@@ -156,7 +156,7 @@ const ProductAvailables: React.FC<ProductAvailableProps> = ({ productAvailable }
                             </Col>
                         </Form.Group>
 
-                        <Form.Group as={Row} className="align-items-center text-center" controlId="availableFormGridSunSecond">
+                        <Form.Group as={Row} className="align-items-center text-center">
                             <Col sm={3}>
                                 <div className='custom-control custom-switch'>
                                     <input
@@ -198,7 +198,7 @@ const ProductAvailables: React.FC<ProductAvailableProps> = ({ productAvailable }
                 </Row>
             }
 
-            <Form.Group as={Row} className="align-items-center text-center" controlId="availableFormGridSunSecond">
+            <Form.Group as={Row} className="align-items-center text-center" controlId={`availableFormGrid${productAvailable.week_day}Buttons`}>
                 <Col sm={3}>
                     <Button variant="outline-success" className="mr-1" style={{ display: buttonSave }} onClick={() => handleButtonSave()} >
                         <BsCheck style={{ display: iconSaved }} />

@@ -201,7 +201,7 @@ const Categories: React.FC<CategoryProps> = ({ category }) => {
 
                         try {
                             if (listCategories) {
-                                await api.post('categories', {
+                                await api.put(`categories/${category.id}`, {
                                     title: values.title,
                                     paused: category.paused,
                                     order: category.order
@@ -272,7 +272,7 @@ const Categories: React.FC<CategoryProps> = ({ category }) => {
                                             size="sm"
                                             role="status"
                                             aria-hidden="true"
-                                        /> : "Create"
+                                        /> : "Salvar"
                                     }
                                 </Button>
 

@@ -43,7 +43,7 @@ function Menu() {
                                     </Tab>
 
                                     <Tab eventKey="products" title="Produtos">
-                                        <ProductsTab categories={listCategories} />
+                                        <ProductsTab />
                                     </Tab>
 
                                     <Tab eventKey="highlights" title="Destaques">

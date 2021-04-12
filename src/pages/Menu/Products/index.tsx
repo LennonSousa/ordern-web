@@ -26,11 +26,7 @@ import { ContextSelectedProduct } from '../../../context/selectedProductContext'
 import { dayOfWeekAsInteger } from '../../../utils/dayOfWeekAsInteger';
 import noPhoto from '../../../assets/images/no-photo.jpg';
 
-interface ProductsTabProps {
-    categories: Category[] | null;
-}
-
-const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
+const ProductsTab: React.FC = () => {
     const { user } = useContext(Context);
 
     const [keySelectedProduct, setKeySelectedProduct] = useState('');
@@ -85,6 +81,7 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
     const [isUpdateAllProductCategories, setIsUpdateAllProductCategories] = useState(false);
     const [listUpdateProductCategories, setListUpdateProductCategories] = useState<Number[]>([]);
     const [listDeleteProductCategories, setListDeleteProductCategories] = useState<Number[]>([]);
+    const [categoriesUpdateAllAdditionals, setCategoriesUpdateAllAdditionals] = useState<Number[]>([]);
 
     /* Product Additionals */
     const [listUpdateProductAdditionals, setListUpdateProductAdditionals] = useState<Number[]>([]);
@@ -236,6 +233,12 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
     function handleListUpdateProductAdditionals(id: number) {
         if (!listUpdateProductAdditionals.find(item => { return item === id })) {
             setListUpdateProductAdditionals([...listUpdateProductAdditionals, id]);
+        }
+    }
+
+    function handleListCategoriesUpdateAllAdditionals(id: number) {
+        if (!categoriesUpdateAllAdditionals.find(item => { return item === id })) {
+            setCategoriesUpdateAllAdditionals([...categoriesUpdateAllAdditionals, id]);
         }
     }
 
@@ -415,44 +418,42 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
 
                 // Update product complements
                 if (tabComplements) {
-                    // Deleting
-                    listDeleteProductCategories.forEach(async idProductCategory => {
-                        // Delete a category additional for this prodcut
-                        await api.delete(`product/categories/${idProductCategory}`);
+                    let updatedListUpdateProductCategories = listUpdateProductCategories;
+                    let updatedListDeleteProductAdditionals = listDeleteProductAdditionals;
+                    let updatedListUpdateProductAdditionals = listUpdateProductAdditionals;
 
-                        const updatedListUpdateProductCategories = listUpdateProductCategories.filter(item => item !== idProductCategory);
-                        setListUpdateProductCategories(updatedListUpdateProductCategories);
+                    // ***** Deleting *****
+                    listDeleteProductCategories.forEach(async idToDeleteProductCategory => {
+                        // Delete a category additional for this prodcut
+                        await api.delete(`product/categories/${idToDeleteProductCategory}`);
+
+                        // Remove the category from list to update.
+                        updatedListUpdateProductCategories = updatedListUpdateProductCategories.filter(item => item !== idToDeleteProductCategory);
 
                         // We can't delete or update a additional from a deleted Category
-                        const productCategory = selectedProduct.categoriesAdditional.find(productCategory => {
-                            return productCategory.id === idProductCategory;
+                        const deletedProductCategory = selectedProduct.categoriesAdditional.find(productCategory => {
+                            return productCategory.id === idToDeleteProductCategory;
                         });
 
-                        if (productCategory) {
-                            productCategory.productAdditional.forEach(productAdditional => {
-                                if (listDeleteProductAdditionals.find(idProductAdditionalToDelete => { return productAdditional.id === idProductAdditionalToDelete })) {
-                                    const updatedListDeleteProductAdditionals = listDeleteProductAdditionals.filter(item => item !== productAdditional.id);
-
-                                    setListDeleteProductAdditionals(updatedListDeleteProductAdditionals);
+                        if (deletedProductCategory) {
+                            deletedProductCategory.productAdditional.forEach(productAdditional => {
+                                if (updatedListDeleteProductAdditionals.find(idProductAdditionalToDelete => { return productAdditional.id === idProductAdditionalToDelete })) {
+                                    updatedListDeleteProductAdditionals = updatedListDeleteProductAdditionals.filter(item => item !== productAdditional.id);
                                 }
 
                                 if (listUpdateProductAdditionals.find(idProductAdditionalToUpdate => { return productAdditional.id === idProductAdditionalToUpdate })) {
-                                    const updatedListUpdateProductAdditionals = listUpdateProductAdditionals.filter(item => item !== productAdditional.id);
-
-                                    setListUpdateProductAdditionals(updatedListUpdateProductAdditionals);
+                                    updatedListUpdateProductAdditionals = listUpdateProductAdditionals.filter(item => item !== productAdditional.id);
                                 }
                             });
                         }
                     });
 
-                    listDeleteProductAdditionals.forEach(async idProductAdditional => {
+                    updatedListDeleteProductAdditionals.forEach(async idProductAdditional => {
                         // Delete a additional for this prodcut
                         await api.delete(`product/additionals/${idProductAdditional}`);
                     });
 
-                    console.log('selectedProduct.categoriesAdditional: ', selectedProduct.categoriesAdditional);
-
-                    // Creating
+                    // ***** Creating *****
                     selectedProduct.categoriesAdditional.forEach(async productCategory => {
                         if (productCategory.id === 0) {
                             // Create a category for this prodcut
@@ -482,33 +483,29 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
                         }
                     });
 
-
-
-                    // Updating
-                    listUpdateProductCategories.forEach(async idProductCategoryToUpdate => {
-                        // Update a value for this prodcut
-                        const productCategoryToUpdate = selectedProduct.categoriesAdditional.find(productCategory => {
-                            return productCategory.id === idProductCategoryToUpdate;
-                        });
-
-                        if (productCategoryToUpdate) {
-                            await api.put(`product/categories/${productCategoryToUpdate.id}`, { ...productCategoryToUpdate, product: selectedProduct.id });
-
-                            productCategoryToUpdate.productAdditional.forEach(async productAdditional => {
-                                if (listUpdateProductAdditionals.find(idProductAdditionalToUpdate => { return productAdditional.id === idProductAdditionalToUpdate })) {
-                                    await api.put(`product/additionals/${productAdditional.id}`, {
-                                        ...productAdditional,
-                                        additional: productAdditional.additional.id,
-                                        categoryAdditional: productAdditional.categoryAdditional.id
-                                    });
-                                }
+                    // ***** Updating *****
+                    if (!isUpdateAllProductCategories) {
+                        updatedListUpdateProductCategories.forEach(async idProductCategoryToUpdate => {
+                            // Update a category for this prodcut
+                            const productCategoryToUpdate = selectedProduct.categoriesAdditional.find(productCategory => {
+                                return productCategory.id === idProductCategoryToUpdate;
                             });
-                        }
-                    });
+
+                            if (productCategoryToUpdate) {
+                                await api.put(`product/categories/${productCategoryToUpdate.id}`, { ...productCategoryToUpdate, product: selectedProduct.id });
+                            }
+                        });
+                    }
+                    else {
+                        selectedProduct.categoriesAdditional.forEach(async (categoryToUpdate, index) => {
+                            // Update a category for this prodcut
+                            await api.put(`product/categories/${categoryToUpdate.id}`, { ...categoryToUpdate, order: index, product: selectedProduct.id });
+                        });
+                    }
 
                     selectedProduct.categoriesAdditional.forEach(prdoductCategory => {
                         prdoductCategory.productAdditional.forEach(async productAdditional => {
-                            if (listUpdateProductAdditionals.find(idProductAdditionalToUpdate => { return productAdditional.id === idProductAdditionalToUpdate })) {
+                            if (updatedListUpdateProductAdditionals.find(idProductAdditionalToUpdate => { return productAdditional.id === idProductAdditionalToUpdate })) {
                                 await api.put(`product/additionals/${productAdditional.id}`, {
                                     ...productAdditional,
                                     additional: productAdditional.additional.id,
@@ -797,7 +794,10 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
                 }
             });
 
-            if (updatedListProductCategories) setListSelectedProductCategoriesDnd(updatedListProductCategories);
+            if (updatedListProductCategories) {
+                setListSelectedProductCategoriesDnd(updatedListProductCategories);
+                setIsUpdateAllProductCategories(true);
+            }
         }
     }
 
@@ -1329,6 +1329,7 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
                                     </> : <Tab.Container id="list-group-tabs-order-complements">
                                         <Row>
                                             <Col>
+                                                <span>Categorias</span>
                                                 <DragDropContext onDragEnd={handleOnDragEndProductCategory}>
                                                     <Droppable droppableId="product-categories">
                                                         {provided => (
@@ -1336,7 +1337,7 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
                                                                 {...provided.droppableProps}
                                                                 ref={provided.innerRef}
                                                             >
-                                                                <ListGroup>
+                                                                <ListGroup className="mt-2">
                                                                     {
                                                                         listSelectedProductCategoriesDnd && listSelectedProductCategoriesDnd.map((productCategory, index) => {
                                                                             return <Draggable
@@ -1366,7 +1367,8 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ categories }) => {
                                             </Col>
 
                                             <Col>
-                                                <Tab.Content>
+                                                <span>Adicionais</span>
+                                                <Tab.Content className="mt-2">
                                                     {
                                                         listSelectedProductCategoriesDnd && listSelectedProductCategoriesDnd.map((productCategory) => {
                                                             return <Tab.Pane key={productCategory.id} eventKey={`#${productCategory.id}`}>
