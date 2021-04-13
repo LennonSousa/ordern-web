@@ -153,12 +153,14 @@ const ProductCategories: React.FC<ProductCategoryProps> = ({ productCategory }) 
         if (selectedProduct) {
             handleTabComplements(true);
 
+            let listAdditionalsToUpdate: Number[] = [];
+
             handleUpdateSelectedProduct({
                 ...selectedProduct, categoriesAdditional: selectedProduct.categoriesAdditional.map((productCategory) => {
 
                     if (productCategory === productCategoryItem) {
                         const additionalsSorted = productCategoryItem.productAdditional.map((additional, index) => {
-                            handleListUpdateProductAdditionals(additional.id);
+                            listAdditionalsToUpdate.push(additional.id);
 
                             return { ...additional, order: index };
                         });
@@ -184,6 +186,8 @@ const ProductCategories: React.FC<ProductCategoryProps> = ({ productCategory }) 
                     return productCategory;
                 })
             });
+
+            handleListUpdateProductAdditionals(listAdditionalsToUpdate);
         }
     }
 

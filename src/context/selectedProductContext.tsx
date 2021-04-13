@@ -12,7 +12,7 @@ interface SelectedProductContextData {
     handleTabAvailables(updated: boolean): void;
     handleTabSale(updated: boolean): void;
     handleListUpdateProductCategories(id: number): void;
-    handleListUpdateProductAdditionals(id: number): void;
+    handleListUpdateProductAdditionals(ids: Number[]): void;
     handleListDeleteProductCategories(id: number): void;
     handleListDeleteProductAdditionals(id: number): void;
 }

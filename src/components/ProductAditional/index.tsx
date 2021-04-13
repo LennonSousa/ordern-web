@@ -83,7 +83,7 @@ const ProductAditionalItem: React.FC<ProductAditionalProps> = ({ productAditiona
             handleTabComplements(true);
 
             if (productAdditionalItem.id !== 0) {
-                handleListUpdateProductAdditionals(productAdditionalItem.id);
+                handleListUpdateProductAdditionals([productAdditionalItem.id]);
             }
 
             handleUpdateSelectedProduct({
@@ -145,6 +145,7 @@ const ProductAditionalItem: React.FC<ProductAditionalProps> = ({ productAditiona
             setButtonDelete('inline-block');
 
             handleTabComplements(true);
+            let listAdditionalsToUpdate: Number[] = [];
 
             if (productAdditionalItem.id !== 0) {
                 handleListDeleteProductAdditionals(productAdditionalItem.id);
@@ -157,7 +158,7 @@ const ProductAditionalItem: React.FC<ProductAditionalProps> = ({ productAditiona
                     return {
                         ...productCategory, productAdditional: updatedAdditionals.map((additional, index) => {
                             if (additional.id !== 0) {
-                                handleListUpdateProductAdditionals(additional.id);
+                                listAdditionalsToUpdate.push(additional.id);
                             }
 
                             return { ...additional, order: index };
@@ -169,6 +170,8 @@ const ProductAditionalItem: React.FC<ProductAditionalProps> = ({ productAditiona
             });
 
             handleUpdateSelectedProduct({ ...selectedProduct, categoriesAdditional: updatedProductCategories });
+
+            handleListUpdateProductAdditionals(listAdditionalsToUpdate);
         }
     }
 
