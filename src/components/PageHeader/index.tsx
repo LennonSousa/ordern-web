@@ -40,16 +40,18 @@ function PageHeader() {
     return (
         <div className="container">
             <Navbar bg="dark" variant="dark" expand="lg">
-                <Navbar.Brand>
-                    <img
-                        alt={store?.title}
-                        src={store?.avatar}
-                        width="30"
-                        height="30"
-                        className="d-inline-block align-top"
-                    />{' '}
-                    {store?.title}
-                </Navbar.Brand>
+                {
+                    store && <Navbar.Brand>
+                        <img
+                            alt={store.title}
+                            src={store.avatar}
+                            width="30"
+                            height="30"
+                            className="d-inline-block align-top"
+                        />{' '}
+                        {store.title}
+                    </Navbar.Brand>
+                }
                 <Navbar.Toggle aria-controls="basic-navbar-nav" />
                 <Navbar.Collapse id="basic-navbar-nav">
                     <Nav className="mr-auto">
