@@ -68,7 +68,7 @@ const HighlightsTab: React.FC<HighlightsTabProps> = ({ categories }) => {
                         console.log(err);
                     });
             } else {
-                api.get('restaurants').then(res => {
+                api.get('stores').then(res => {
                     handleStore(res.data[0]);
                 });
             }
@@ -159,7 +159,7 @@ const HighlightsTab: React.FC<HighlightsTabProps> = ({ categories }) => {
         setSpinnerEnableStoreHighlight(true);
 
         try {
-            store && await api.put(`restaurants/${store.id}`, {
+            store && await api.put(`stores/${store.id}`, {
                 title: store.title,
                 phone: store.phone,
                 description: store.description,
@@ -177,7 +177,7 @@ const HighlightsTab: React.FC<HighlightsTabProps> = ({ categories }) => {
                 highlights_title: store.highlights_title
             });
 
-            const updatedStore = await api.get('restaurants');
+            const updatedStore = await api.get('stores');
 
             handleStore(updatedStore.data[0]);
 
@@ -237,7 +237,7 @@ const HighlightsTab: React.FC<HighlightsTabProps> = ({ categories }) => {
                                     setSpinnerSaveStoreHighlight(true);
 
                                     try {
-                                        store && await api.put(`restaurants/${store.id}`, {
+                                        store && await api.put(`stores/${store.id}`, {
                                             title: store.title,
                                             phone: store.phone,
                                             description: store.description,

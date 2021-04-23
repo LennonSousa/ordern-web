@@ -71,14 +71,14 @@ function Restaurants() {
     const [spinnerCep, setSpinnerCep] = useState(false);
 
     useEffect(() => {
-        api.get('restaurants')
+        api.get('stores')
             .then(res => {
-                handleStore(res.data[0]);
+                handleStore(res.data);
 
                 const {
                     cover,
                     avatar
-                } = res.data[0];
+                } = res.data;
 
                 setCoverPreview(cover);
                 setCoverRestaurante(cover);
@@ -139,7 +139,7 @@ function Restaurants() {
 
             console.log(data);
 
-            await api.put(`restaurant/cover/${store?.id}`, data);
+            await api.put(`store/cover/${store?.id}`, data);
 
             store && handleStore({
                 id: store.id,
@@ -235,7 +235,7 @@ function Restaurants() {
 
             console.log(data);
 
-            await api.put(`restaurant/avatar/${store?.id}`, data);
+            await api.put(`store/avatar/${store?.id}`, data);
 
             store && handleStore({
                 id: store.id,
@@ -441,7 +441,7 @@ function Restaurants() {
                                                     setSavingStore(true);
 
                                                     try {
-                                                        await api.put(`restaurants/${store.id}`, {
+                                                        await api.put(`stores/${store.id}`, {
                                                             title: values.title,
                                                             phone: values.phone,
                                                             description: values.description,
@@ -457,7 +457,7 @@ function Restaurants() {
                                                             free_shipping: store.free_shipping,
                                                         });
 
-                                                        const res = await api.get(`restaurants/${store.id}`);
+                                                        const res = await api.get('stores');
 
                                                         handleStore(res.data);
 
@@ -589,7 +589,7 @@ function Restaurants() {
                                                     setSavingAddressStore(true);
 
                                                     try {
-                                                        await api.put(`restaurants/${store.id}`, {
+                                                        await api.put(`stores/${store.id}`, {
                                                             title: store.title,
                                                             phone: store.phone,
                                                             description: store.description,
@@ -605,7 +605,7 @@ function Restaurants() {
                                                             free_shipping: store.free_shipping,
                                                         });
 
-                                                        const res = await api.get(`restaurants/${store.id}`);
+                                                        const res = await api.get('stores');
 
                                                         handleStore(res.data);
 

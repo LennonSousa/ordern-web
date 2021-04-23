@@ -8,6 +8,7 @@ import produce from 'immer';
 
 import api from '../../../services/api';
 import { Context } from '../../../context/auth';
+import { StoreContext } from '../../../context/storeContext';
 import { CategoriesContext } from '../../../context/categoriesContext';
 import rbac from '../../../services/roleBasedAccessControl';
 import CategoryItem, { Category } from '../../../components/Categories';
@@ -18,6 +19,7 @@ const validatiionSchema = Yup.object().shape({
 
 const CategoriesTab: React.FC = () => {
     const { user } = useContext(Context);
+    const { store } = useContext(StoreContext);
     const { listCategories, handleListCategories } = useContext(CategoriesContext);
 
     const [showModalNewCategory, setShowModalNewCategory] = useState(false);
@@ -66,7 +68,7 @@ const CategoriesTab: React.FC = () => {
     async function saveOrder(list: Category[]) {
         setCategoriesOrderSaving(true);
 
-        list.forEach(async( category, index) => {
+        list.forEach(async (category, index) => {
             try {
                 await api.put(`categories/${category.id}`, {
                     title: category.title,
@@ -165,7 +167,8 @@ const CategoriesTab: React.FC = () => {
                                 await api.post('categories', {
                                     title: values.title,
                                     paused: false,
-                                    order: listCategories.length
+                                    order: listCategories.length,
+                                    store: store?.id
                                 });
 
                                 const res = await api.get('categories');

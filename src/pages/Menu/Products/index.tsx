@@ -264,7 +264,7 @@ const ProductsTab: React.FC = () => {
                 data.append('description', selectedProduct.description);
 
                 if (imageSelected) {
-                    data.append('image', imageSelected);
+                    data.append('images', imageSelected);
                 }
 
                 data.append('maiority', String(selectedProduct.maiority));

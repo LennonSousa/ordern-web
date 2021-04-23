@@ -9,8 +9,6 @@ import { BsClock } from 'react-icons/bs';
 import { Order } from '../Orders';
 import { ContextSelectedOrder } from '../../context/selectedOrderContext';
 
-
-
 export interface OrderStatus {
     id: number;
     title: string;
