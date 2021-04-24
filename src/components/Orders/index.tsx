@@ -19,8 +19,8 @@ import noOrderImage from '../../assets/images/undraw_no_data_re_kwbl.svg';
 export interface Order {
     id: number;
     tracker: string;
-    client_id: string;
-    client: string;
+    customer_id: string;
+    customer: string;
     ordered_at: Date;
     delivery_in: Date;
     placed_at: Date;
@@ -89,7 +89,7 @@ const Orders: React.FC<OrderProps> = ({ id }) => {
             try {
                 await api.put(`orders/${order.id}`,
                     {
-                        client: order.client,
+                        client: order.customer,
                         placed_at: statusToSave.order === 2 || statusToSave.order === 3 ? new Date() : order.placed_at,
                         delivered_at: statusToSave.order === 4 ? new Date() : order.delivered_at,
                         delivery_estimated: order.delivery_estimated,
@@ -113,7 +113,7 @@ const Orders: React.FC<OrderProps> = ({ id }) => {
                     < Card.Header className="text-left" >
                         <Row>
                             <Col>
-                                <h5 className="font-weight-bolder">{order.client}</h5>
+                                <h5 className="font-weight-bolder">{order.customer}</h5>
                             </Col>
                             <Col md={4}>
                                 <span>{`Código do pedido: ${order.tracker}`}</span>
@@ -348,7 +348,7 @@ const Orders: React.FC<OrderProps> = ({ id }) => {
                             try {
                                 await api.put(`orders/${order.id}`,
                                     {
-                                        client: order.client,
+                                        client: order.customer,
                                         placed_at: order.placed_at,
                                         delivered_at: order.delivered_at,
                                         payment_type: order.payment_type,

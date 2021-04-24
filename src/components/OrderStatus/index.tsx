@@ -62,7 +62,7 @@ const OrderStatusItem: React.FC<OrderStatusProps> = ({ orderStatus, orders }) =>
                                     return <ListGroup.Item key={order.id} action onClick={() => { handleSelectedOrder(order.id) }}>
                                         <Row>
                                             <Col className="font-weight-bolder text-truncate">
-                                                {order.client}
+                                                {order.customer}
                                             </Col>
                                         </Row>
 

@@ -224,7 +224,7 @@ function Reports() {
                                                             order.orderStatus.order === 4 ? <><FaCheckCircle color="#28a745" /> {order.orderStatus.title}</> :
                                                                 <><FaTimesCircle color="#dc3545" /> {order.orderStatus.title}</>
                                                 }</td>
-                                                <td>{order.client}</td>
+                                                <td>{order.customer}</td>
                                                 <td>{format(new Date(order.ordered_at), 'PPPp', { locale: br })}</td>
                                                 <td><Link to={`/reports/order/details/${order.id}`}><FaInfoCircle /></Link></td>
                                             </tr>

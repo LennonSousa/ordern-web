@@ -29,7 +29,7 @@ function OrderDetails() {
 
                 const orderRes: Order = res.data;
 
-                api.get(`/customers/orders/${orderRes.client_id}`).then(res => {
+                api.get(`/customers/orders/${orderRes.customer_id}`).then(res => {
                     setCustomerOrders(res.data);
                 }).catch(err => {
                     console.log('Error get customer orders: ', err);
@@ -91,7 +91,7 @@ function OrderDetails() {
 
                                     <Row>
                                         <Col>
-                                            <h5 className="font-weight-bolder">{order.client}</h5>
+                                            <h5 className="font-weight-bolder">{order.customer}</h5>
                                         </Col>
                                     </Row>
                                 </Col>
@@ -286,7 +286,7 @@ function OrderDetails() {
                                                         <td>{orderItem.id === order.id && <FaCaretRight />}{orderItem.tracker}</td>
                                                         <td>{Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(orderItem.total)}</td>
                                                         <td>{orderItem.orderStatus.title}</td>
-                                                        <td>{orderItem.client}</td>
+                                                        <td>{orderItem.customer}</td>
                                                         <td>{format(new Date(orderItem.ordered_at), 'PPPp', { locale: br })}</td>
                                                         <td><Link to={`/reports/order/details/${orderItem.id}`}><FaInfoCircle /></Link></td>
                                                     </tr>
