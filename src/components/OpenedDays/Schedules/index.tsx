@@ -41,18 +41,17 @@ const OpenedSchedulesItem: React.FC<OpenedSchedulesProps> = ({ openedSchedules }
         setWaitingDelete(true);
 
         try {
-            await api.delete(`restaurant/opened-day/schedules/${openedSchedules.id}`);
+            await api.delete(`store/opened-day/schedules/${openedSchedules.id}`);
 
-            const res = await api.get('restaurant/opened-days');
+            const res = await api.get('store/opened-days');
 
             handleDays(res.data);
         }
         catch (err) {
-            console.log('error post restaurants schedule day');
+            console.log('error post store schedules day');
             console.log(err);
+            setWaitingDelete(false);
         }
-
-        setWaitingDelete(false);
     }
 
     return (
@@ -69,18 +68,18 @@ const OpenedSchedulesItem: React.FC<OpenedSchedulesProps> = ({ openedSchedules }
                     setSavingScheduleStatus("saving");
 
                     try {
-                        await api.put(`restaurant/opened-day/schedules/${openedSchedules.id}`, {
+                        await api.put(`store/opened-day/schedules/${openedSchedules.id}`, {
                             from: convertHourToMinutes(values.from),
                             to: convertHourToMinutes(values.to),
                             paused: openedSchedules.paused
                         });
 
-                        const res = await api.get('restaurant/opened-days');
+                        const res = await api.get('store/opened-days');
 
                         handleDays(res.data);
                     }
                     catch (err) {
-                        console.log('error post restaurants schedule day');
+                        console.log('error post store schedules day');
                         console.log(err);
                     }
 
@@ -144,8 +143,8 @@ const OpenedSchedulesItem: React.FC<OpenedSchedulesProps> = ({ openedSchedules }
                                             role="status"
                                             aria-hidden="true"
                                         /> : (
-                                                savingScheduleStatus === "saved" ? <BsCheck /> : savingScheduleStatus === "touched" && <FaSave />
-                                            )
+                                            savingScheduleStatus === "saved" ? <BsCheck /> : savingScheduleStatus === "touched" && <FaSave />
+                                        )
                                     }
                                 </Button>
                             </Col>

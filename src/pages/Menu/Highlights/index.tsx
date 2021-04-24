@@ -6,28 +6,23 @@ import { FaSave } from 'react-icons/fa';
 import { Container, Row, Col, Button, Modal, Form, ListGroup, Spinner, Image, Alert } from 'react-bootstrap';
 
 import api from '../../../services/api';
+import { CategoriesContext } from '../../../context/categoriesContext';
 import { Context } from '../../../context/auth';
 import rbac from '../../../services/roleBasedAccessControl';
 import { StoreContext } from '../../../context/storeContext';
-import { Category } from '../../../components/Categories';
 import HighlightItem, { Highlight } from '../../../components/Highlights';
 import { Product } from '../../../components/Products';
 
 import noPhoto from '../../../assets/images/no-photo.jpg';
 
-interface HighlightsTabProps {
-    categories: Category[] | null;
-}
-
 const validatiionSchema = Yup.object().shape({
     highlights_title: Yup.string().required('Obrigatório!').max(25, 'Deve conter no máximo 25 caracteres!'),
 });
 
-const HighlightsTab: React.FC<HighlightsTabProps> = ({ categories }) => {
+const HighlightsTab: React.FC = () => {
     const { user } = useContext(Context);
     const { store, handleStore } = useContext(StoreContext);
-
-    const [listCategories, setListCategories] = useState<Category[] | null>(null);
+    const { listCategories } = useContext(CategoriesContext);
 
     /* Additionals */
     const [highlights, setHighlights] = useState<Highlight[]>([]);
@@ -52,33 +47,21 @@ const HighlightsTab: React.FC<HighlightsTabProps> = ({ categories }) => {
 
     useEffect(() => {
         try {
-            if (store) {
-                api.get('highlights/landing')
-                    .then(res => {
-                        setHighlights(res.data);
+            api.get('highlights/landing')
+                .then(res => {
+                    setHighlights(res.data);
+                })
+                .catch(err => {
+                    setTimeout(() => {
+                        setErrorSaveHighlight(false);
+                    }, 5000);
 
-                        setListCategories(categories);
-                    })
-                    .catch(err => {
-                        setTimeout(() => {
-                            setErrorSaveHighlight(false);
-                        }, 5000);
-
-                        console.log('error get highlights');
-                        console.log(err);
-                    });
-            } else {
-                api.get('stores').then(res => {
-                    handleStore(res.data[0]);
+                    console.log('error get highlights');
+                    console.log(err);
                 });
-            }
-
         }
-        catch (err) {
-
-        }
-
-    }, [store, categories]); // eslint-disable-line react-hooks/exhaustive-deps
+        catch { }
+    }, [store]); // eslint-disable-line react-hooks/exhaustive-deps
 
     async function handleHighlights() {
         try {
@@ -169,7 +152,7 @@ const HighlightsTab: React.FC<HighlightsTabProps> = ({ categories }) => {
                 number: store.number,
                 group: store.group,
                 city: store.city,
-                country: store.country,
+                state: store.state,
                 latitude: store.latitude,
                 longitude: store.longitude,
                 free_shipping: store.free_shipping,
@@ -179,7 +162,7 @@ const HighlightsTab: React.FC<HighlightsTabProps> = ({ categories }) => {
 
             const updatedStore = await api.get('stores');
 
-            handleStore(updatedStore.data[0]);
+            handleStore(updatedStore.data);
 
             setSpinnerEnableStoreHighlight(false);
 
@@ -247,7 +230,7 @@ const HighlightsTab: React.FC<HighlightsTabProps> = ({ categories }) => {
                                             number: store.number,
                                             group: store.group,
                                             city: store.city,
-                                            country: store.country,
+                                            state: store.state,
                                             latitude: store.latitude,
                                             longitude: store.longitude,
                                             free_shipping: store.free_shipping,
@@ -385,11 +368,13 @@ const HighlightsTab: React.FC<HighlightsTabProps> = ({ categories }) => {
                         setSpinnerSaveHighlight(true);
 
                         try {
+                            console.log(selectedProduct)
                             if (selectedProduct) {
                                 if (buttonCreateUpdateHighlight) {
                                     await api.post('highlights/landing', {
                                         active: true,
-                                        product: selectedProduct.id
+                                        product: selectedProduct.id,
+                                        store: store.id,
                                     });
                                 }
                                 else if (selectedHighlight) {
@@ -435,7 +420,7 @@ const HighlightsTab: React.FC<HighlightsTabProps> = ({ categories }) => {
                                             <Col>
                                                 <Image
                                                     fluid
-                                                    src={selectedProduct ? selectedProduct?.image : noPhoto}
+                                                    src={selectedProduct && selectedProduct?.images.length > 0 ? selectedProduct?.images[0].path : noPhoto}
                                                     alt="Product image."
                                                 />
                                             </Col>

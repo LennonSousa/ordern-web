@@ -14,7 +14,7 @@ const OpenedDays: React.FC = () => {
     useEffect(() => {
         setWaitingOpenedDays(true);
 
-        api.get('restaurant/opened-days')
+        api.get('store/opened-days')
             .then(res => {
                 handleDays(res.data);
 

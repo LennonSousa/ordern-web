@@ -6,9 +6,11 @@ import rbac from '../../../services/roleBasedAccessControl';
 
 import { Row, Col, Button, Modal, Form, ListGroup, Spinner, Alert } from 'react-bootstrap';
 
+import { StoreContext } from '../../../context/storeContext';
 import AdditionalItem, { Additional } from '../../../components/Additionals';;
 
 const Additionals: React.FC = () => {
+    const { store } = useContext(StoreContext);
     const { user } = useContext(Context);
 
     /* Additionals */
@@ -21,7 +23,7 @@ const Additionals: React.FC = () => {
     const [buttonDeleteAdditional, setButtonDeleteAdditional] = useState('none');
     const [buttonDeleteYesAdditional, setButtonDeleteYesAdditional] = useState('none');
     const [titleModalAdditional, setTitleModalAdditional] = useState('Criar uma categoria');
-    const [selectedAdditionalId, setSelectedAdditionalId] = useState(0);
+    const [selectedAdditionalId, setSelectedAdditionalId] = useState('0');
     const [spinnerSaveAdditional, setSpinnerSaveAdditional] = useState('none');
     const [spinnerDeleteAdditional, setSpinnerDeleteAdditional] = useState('none');
     const [successSaveAdditional, setSuccessSaveAdditional] = useState(false);
@@ -43,7 +45,7 @@ const Additionals: React.FC = () => {
             });
     }, []);
 
-    function handleModalAdditional(criar: boolean, additionalId: number) {
+    function handleModalAdditional(criar: boolean, additionalId: string) {
         if (criar) {
             setTitleModalAdditional('Criar um adicional');
             setTitleAdditional('');
@@ -72,7 +74,7 @@ const Additionals: React.FC = () => {
         handleShow();
     }
 
-    function handlePauseAdditional(additionalId: number) {
+    function handlePauseAdditional(additionalId: string) {
         try {
             let additionalToUpdate = listAdditionals.map(additional => {
                 if (additional.id === additionalId) {
@@ -151,7 +153,8 @@ const Additionals: React.FC = () => {
             const response = await api.post('additionals', {
                 title: titleAdditional,
                 code: codeAdditional,
-                paused: false
+                paused: false,
+                store: store?.id
             });
 
             const { id, title, code, paused } = response.data;
@@ -180,7 +183,7 @@ const Additionals: React.FC = () => {
                 setErrorSaveAdditional(false);
             }, 5000);
 
-            console.log('error post a new category');
+            console.log('error post a new additionals');
             console.log(err);
         }
     }
@@ -231,7 +234,7 @@ const Additionals: React.FC = () => {
                 setErrorSaveAdditional(false);
             }, 5000);
 
-            console.log('error put the category');
+            console.log('error put the additional');
             console.log(err);
         }
     }
@@ -260,7 +263,7 @@ const Additionals: React.FC = () => {
                 user && rbac.can(String(user.type.code)).createAny('additionals').granted && <section className="mt-3">
                     <Row>
                         <Col>
-                            <Button variant="danger" onClick={() => { handleModalAdditional(true, 0) }} >Criar adicional</Button>
+                            <Button variant="danger" onClick={() => { handleModalAdditional(true, '0') }} >Criar adicional</Button>
                         </Col>
                     </Row>
                 </section>
@@ -295,7 +298,7 @@ const Additionals: React.FC = () => {
                 <Modal.Body>
                     <form>
                         <Form.Group controlId="categoryFormGridName">
-                            <Form.Label>Nome da categoria</Form.Label>
+                            <Form.Label>Nome do adicional</Form.Label>
                             <Form.Control type="text"
                                 defaultValue={titleAdditional}
                                 placeholder="Ex: Pizzas"
@@ -318,7 +321,7 @@ const Additionals: React.FC = () => {
                     </Button>
                     <Button variant="danger"
                         style={{ display: buttonCreateAdditional }}
-                        onClick={() => { handleCreateAdditional() }}>
+                        onClick={handleCreateAdditional}>
                         Criar{' '}
                         <Spinner
                             as="span"
@@ -332,7 +335,7 @@ const Additionals: React.FC = () => {
 
                     <Button variant="danger"
                         style={{ display: buttonDeleteAdditional }}
-                        onClick={() => { handleButtonsDeleteCategory() }}>
+                        onClick={handleButtonsDeleteCategory}>
                         Excluir{' '}
                         <Spinner
                             as="span"
@@ -346,7 +349,7 @@ const Additionals: React.FC = () => {
 
                     <Button variant="warning"
                         style={{ display: buttonDeleteYesAdditional }}
-                        onClick={() => { handleDeleteAdditional() }}>
+                        onClick={handleDeleteAdditional}>
                         Confirmar{' '}
                         <Spinner
                             as="span"
@@ -360,7 +363,7 @@ const Additionals: React.FC = () => {
 
                     <Button variant="danger"
                         style={{ display: buttonUpdateAdditional }}
-                        onClick={() => { handleUpdateAdditional() }}>
+                        onClick={handleUpdateAdditional}>
                         Salvar{' '}
                         <Spinner
                             as="span"

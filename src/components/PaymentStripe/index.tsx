@@ -58,9 +58,7 @@ const PaymentsDelivery: React.FC = () => {
                 .then(res => {
                     setPaymentStripe(res.data);
                 })
-                .catch(err => {
-
-                });
+                .catch(() => { });
 
             setOutdated(false);
         }
@@ -130,7 +128,7 @@ const PaymentsDelivery: React.FC = () => {
 
                         }
                         catch (err) {
-                            console.log('error post new user');
+                            console.log('error put stripe keys.');
                             console.log(err);
                         }
                         setOutdated(true);

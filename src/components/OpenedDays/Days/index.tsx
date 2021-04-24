@@ -29,13 +29,13 @@ const DayItem: React.FC<DaysProps> = ({ day }) => {
     async function handleEnabled() {
         setWaitingDay(true);
 
-        await api.put(`restaurant/opened-days/${day.id}`,
+        await api.put(`store/opened-days/${day.id}`,
             {
                 opened: !day.opened
             }
         );
 
-        const res = await api.get('restaurant/opened-days');
+        const res = await api.get('store/opened-days');
 
         handleDays(res.data);
 
@@ -44,14 +44,14 @@ const DayItem: React.FC<DaysProps> = ({ day }) => {
 
     async function addDaySchedule() {
         try {
-            await api.post('restaurant/opened-day/schedules', {
+            await api.post('store/opened-day/schedules', {
                 from: 0,
                 to: 0,
                 paused: false,
                 weedDay: day.id
             });
 
-            const res = await api.get('restaurant/opened-days');
+            const res = await api.get('store/opened-days');
 
             handleDays(res.data);
         }

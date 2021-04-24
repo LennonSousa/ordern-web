@@ -8,11 +8,11 @@ import { maskCurrency } from '../../utils/maskCurrency';
 
 
 export interface ProductValue {
-    id: number;
+    id: string;
     description: string;
     value: number;
     order: number;
-    product: number;
+    product: string;
 }
 
 interface ProductValueProps {

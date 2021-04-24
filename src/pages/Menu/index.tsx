@@ -1,7 +1,6 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { Container, Row, Col, Tabs, Tab } from 'react-bootstrap';
 
-import { CategoriesContext } from '../../context/categoriesContext';
 import PageHeader from '../../components/PageHeader';
 import BreadCrumb from '../../components/BreadCrumb';
 
@@ -12,8 +11,6 @@ import HighlightsTab from './Highlights';
 import AdditionalsTab from './Additionals';
 
 function Menu() {
-    const { listCategories } = useContext(CategoriesContext);
-
     return (
         <>
             <header className="bg-dark mb-2">
@@ -47,7 +44,7 @@ function Menu() {
                                     </Tab>
 
                                     <Tab eventKey="highlights" title="Destaques">
-                                        <HighlightsTab categories={listCategories} />
+                                        <HighlightsTab />
                                     </Tab>
                                 </Tabs>
                             </Col>

@@ -11,10 +11,10 @@ interface SelectedProductContextData {
     handleTabComplements(updated: boolean): void;
     handleTabAvailables(updated: boolean): void;
     handleTabSale(updated: boolean): void;
-    handleListUpdateProductCategories(id: number): void;
-    handleListUpdateProductAdditionals(ids: Number[]): void;
-    handleListDeleteProductCategories(id: number): void;
-    handleListDeleteProductAdditionals(id: number): void;
+    handleListUpdateProductCategories(id: string): void;
+    handleListUpdateProductAdditionals(ids: string[]): void;
+    handleListDeleteProductCategories(id: string): void;
+    handleListDeleteProductAdditionals(id: string): void;
 }
 
 const ContextSelectedProduct = createContext<SelectedProductContextData>({} as SelectedProductContextData);

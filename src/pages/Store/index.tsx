@@ -153,8 +153,9 @@ function Restaurants() {
                 street: store.street,
                 number: store.number,
                 group: store.group,
+                complement: '',
                 city: store.city,
-                country: store.country,
+                state: store.state,
                 latitude: store.latitude,
                 longitude: store.longitude,
                 free_shipping: store.free_shipping,
@@ -249,8 +250,9 @@ function Restaurants() {
                 street: store.street,
                 number: store.number,
                 group: store.group,
+                complement: '',
                 city: store.city,
-                country: store.country,
+                state: store.state,
                 latitude: store.latitude,
                 longitude: store.longitude,
                 free_shipping: store.free_shipping,
@@ -451,7 +453,7 @@ function Restaurants() {
                                                             number: store.number,
                                                             group: store.group,
                                                             city: store.city,
-                                                            country: store.country,
+                                                            state: store.state,
                                                             latitude: store.latitude,
                                                             longitude: store.longitude,
                                                             free_shipping: store.free_shipping,
@@ -581,7 +583,7 @@ function Restaurants() {
                                                         number: store.number,
                                                         group: store.group,
                                                         city: store.city,
-                                                        country: store.country
+                                                        state: store.state
                                                     }
                                                 }
                                                 onSubmit={async values => {
@@ -599,7 +601,7 @@ function Restaurants() {
                                                             number: values.number,
                                                             group: values.group,
                                                             city: values.city,
-                                                            country: values.country,
+                                                            state: values.state,
                                                             latitude: store.latitude,
                                                             longitude: store.longitude,
                                                             free_shipping: store.free_shipping,
@@ -731,11 +733,11 @@ function Restaurants() {
                                                                 <Form.Label>Estado</Form.Label>
                                                                 <Form.Control type="text"
                                                                     onChange={handleChange}
-                                                                    value={values.country}
-                                                                    name="country"
-                                                                    isInvalid={!!errors.country}
+                                                                    value={values.state}
+                                                                    name="state"
+                                                                    isInvalid={!!errors.state}
                                                                 />
-                                                                <Form.Control.Feedback type="invalid">{errors.country}</Form.Control.Feedback>
+                                                                <Form.Control.Feedback type="invalid">{errors.state}</Form.Control.Feedback>
                                                             </Form.Group>
                                                         </Form.Row>
 

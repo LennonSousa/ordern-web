@@ -3,11 +3,11 @@ import Cookies from 'js-cookie';
 
 import api from '../services/api';
 import socketClient from '../services/socketClient';
-//import history from '../routes/history';
-import { OrdersContext } from '../context/ordersContext';
+import { StoreContext } from './storeContext';
+import { OrdersContext } from './ordersContext';
 import { Order } from '../components/Orders';
 import { OrdersNotificationsContext } from '../context/ordersNotificationsContext';
-import {User} from '../components/Users';
+import { User } from '../components/Users';
 
 interface AuthContextData {
     user: User | null;
@@ -20,6 +20,7 @@ interface AuthContextData {
 const Context = createContext<AuthContextData>({} as AuthContextData);
 
 const AuthProvider: React.FC = ({ children }) => {
+    const { handleStore } = useContext(StoreContext);
     const { handleOrders } = useContext(OrdersContext);
     const { handleHasShown } = useContext(OrdersNotificationsContext);
 
@@ -35,24 +36,26 @@ const AuthProvider: React.FC = ({ children }) => {
             if (storagedUser && storagedToken) {
                 api.defaults.headers['Authorization'] = `Bearer ${storagedToken}`;
 
-                api.get('',
-                    {
-                        validateStatus: function (status) {
-                            return status < 500; // Resolve only if the status code is less than 500.
-                        }
-                    }
-                ).then(res => {
-                    if (res.status === 401) {
-                        handleLogout();
-                    }
-                    else {
-                        handleOrdersWebSocket();
+                api.get('').then(res => {
+                    handleOrdersWebSocket();
 
-                        setUser(JSON.parse(storagedUser));
-                        setSigned(true);
+                    setUser(JSON.parse(storagedUser));
+                    setSigned(true);
 
-                        setLoading(false);
-                    }
+                    api.get('stores')
+                        .then(res => {
+                            handleStore(res.data);
+                        })
+                        .catch(err => {
+                            console.log('error get restaurants');
+                            console.log(err);
+                        });
+
+                    setLoading(false);
+                }).catch(err => {
+                    console.log('Error to authenticate: ', err);
+
+                    handleLogout();
                 });
             }
             else {
@@ -111,6 +114,10 @@ const AuthProvider: React.FC = ({ children }) => {
 
                 Cookies.set('ordern:user', JSON.stringify(user), { expires: 1 });
                 Cookies.set('ordern:token', token, { expires: 1 });
+
+                const resStore = await api.get('stores');
+
+                handleStore(resStore.data);
 
                 setSigned(true);
                 //history.push('/dashboard');

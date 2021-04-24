@@ -6,6 +6,7 @@ import { BsFillPlayFill, BsFillPauseFill, BsFiles, BsPencil } from "react-icons/
 import { Context } from '../../context/auth';
 import rbac from '../../services/roleBasedAccessControl';
 import { Category } from '../Categories';
+import { ProductImages } from '../ProductImages';
 import { ProductValue } from '../ProductValues';
 import { ProductCategory } from '../ProductCategory';
 import { ProductAvailable } from '../ProductAvailable';
@@ -13,10 +14,10 @@ import { ProductAvailable } from '../ProductAvailable';
 import './styles.css';
 
 export interface Product {
-    id: number;
+    id: string;
     title: string;
     description: string;
-    image: string;
+    images: ProductImages[];
     maiority: boolean;
     code: string;
     price_one: boolean;

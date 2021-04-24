@@ -8,7 +8,7 @@ import rbac from '../../services/roleBasedAccessControl';
 import { ProductAditional } from '../ProductAditional';
 
 export interface Additional {
-    id: number;
+    id: string;
     title: string;
     code: string;
     paused: boolean;

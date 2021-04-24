@@ -11,7 +11,7 @@ import rbac from '../../services/roleBasedAccessControl';
 import { Product } from '../Products';
 
 export interface Category {
-    id: number;
+    id: string;
     title: string;
     paused: boolean;
     order: number;

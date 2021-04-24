@@ -8,14 +8,14 @@ import ProductAditionalItem, { ProductAditional } from '../ProductAditional';
 import { ContextSelectedProduct } from '../../context/selectedProductContext';
 
 export interface ProductCategory {
-    id: number;
+    id: string;
     title: string;
     min: number;
     max: number;
     repeat: boolean;
     order: number;
     productAdditional: ProductAditional[];
-    product: number;
+    product: string;
 }
 
 interface ProductCategoryProps {
@@ -82,7 +82,7 @@ const ProductCategories: React.FC<ProductCategoryProps> = ({ productCategory }) 
 
             handleTabComplements(true);
 
-            if (productCategory.id !== 0) {
+            if (productCategory.id !== '0') {
                 handleListUpdateProductCategories(productCategory.id);
             }
 
@@ -133,7 +133,7 @@ const ProductCategories: React.FC<ProductCategoryProps> = ({ productCategory }) 
 
             handleTabComplements(true);
 
-            if (productCategory.id !== 0) {
+            if (productCategory.id !== '0') {
                 handleListDeleteProductCategories(productCategory.id);
             }
 
@@ -153,7 +153,7 @@ const ProductCategories: React.FC<ProductCategoryProps> = ({ productCategory }) 
         if (selectedProduct) {
             handleTabComplements(true);
 
-            let listAdditionalsToUpdate: Number[] = [];
+            let listAdditionalsToUpdate: string[] = [];
 
             handleUpdateSelectedProduct({
                 ...selectedProduct, categoriesAdditional: selectedProduct.categoriesAdditional.map((productCategory) => {
@@ -167,12 +167,12 @@ const ProductCategories: React.FC<ProductCategoryProps> = ({ productCategory }) 
 
                         return {
                             ...productCategoryItem, productAdditional: [...additionalsSorted, {
-                                id: 0,
+                                id: '0',
                                 pdv: '',
                                 price: 0.00,
                                 order: productCategoryItem.productAdditional.length,
                                 additional: {
-                                    id: 0,
+                                    id: '0',
                                     title: '',
                                     code: '',
                                     paused: false,

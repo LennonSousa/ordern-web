@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { useLocation } from "react-router-dom";
+import { useLocation, useHistory } from "react-router-dom";
 import { Image, Form, Row, Col, Button, Modal, Toast, Spinner } from 'react-bootstrap';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
@@ -7,10 +7,11 @@ import * as Yup from 'yup';
 import api from '../../services/api';
 import { Context } from '../../context/auth';
 import { User } from '../../components/Users';
+import NewStore from '../../components/NewStore';
 
 import logoImg from '../../assets/images/undraw_add_to_cart.svg';
 import activatedUserImg from '../../assets/images/undraw_Astronaut_re_8c33.svg';
-
+import error404Img from '../../assets/images/undraw_page_not_found_su7k.svg';
 
 import './styles.css';
 
@@ -19,7 +20,6 @@ const userValidatiionSchema = Yup.object().shape({
     cpf: Yup.string().notRequired(),
     birth: Yup.date().required('Obrigatório!'),
     phone: Yup.string().notRequired(),
-    email: Yup.string().email('E-mail inválido').required('Obrigatório!'),
     password: Yup.string().required('Obrigatório!').min(8, 'Mínimo 8 caracteres.').max(26, 'Máximo 26 caracteres.')
 });
 
@@ -29,13 +29,19 @@ const validatiionSchema = Yup.object().shape({
 });
 
 function Landing() {
+    const history = useHistory();
+
     const querys = new URLSearchParams(useLocation().search);
 
     const { handleLogin } = useContext(Context);
 
-    const [isNewUser, setIsNewUser] = useState(false);
+    const [isNewItem, setIsNewItem] = useState(false);
     const [newUser, setNewUser] = useState<User>();
     const [newUserToken, setNewUserToken] = useState("");
+
+    const [newStoreEmail, setNewStoreEmail] = useState("");
+    const [newStoreToken, setNewStoreToken] = useState("");
+
     const [isSaving, setIsSaving] = useState(false);
 
     const [authenticating, setAuthenticating] = useState(false);
@@ -43,44 +49,68 @@ function Landing() {
     const [errorMessageLogin, setErrorMessageLogin] = useState('');
 
     const [showUserActivated, setShowUserActivated] = useState(false);
-
-    const handleCloseUserActivated = () => { setShowUserActivated(false); setIsNewUser(false); }
+    const handleCloseUserActivated = () => { setShowUserActivated(false); setIsNewItem(false); }
     const handelShowUserActivated = () => setShowUserActivated(true);
+
+    const [showError, setShowError] = useState(false);
+    const handleCloseError = () => setShowError(false);
+    const handelShowError = () => setShowError(true);
 
     useEffect(() => {
         if (querys.has("email") && querys.has("token")) {
-            api.get('users/authenticate/new',
-                {
-                    params: {
-                        email: querys.get("email"), token: querys.get("token")
-                    }
-                })
-                .then(res => {
-                    setNewUser(res.data.user);
-                    setNewUserToken(res.data.token);
-                })
-                .catch(err => {
-                    console.log('error get new user');
-                    console.log(err);
-                });
+            if (querys.has("item") && querys.get("item") === "newstore") {
+                api.post('store/new',
+                    {
+                        email: querys.get("email"),
+                        token: querys.get("token")
+                    })
+                    .then(res => {
+                        setNewStoreEmail(res.data.email);
+                        setNewStoreToken(res.data.token);
 
-            setIsNewUser(true);
+                        setIsNewItem(true);
+                    })
+                    .catch(() => {
+                        history.replace('/');
+                    });
+            }
+            else {
+                api.get('users/authenticate/new',
+                    {
+                        params: {
+                            email: querys.get("email"), token: querys.get("token")
+                        }
+                    })
+                    .then(res => {
+                        console.log(res.data.user)
+                        setNewUser(res.data.user);
+                        setNewUserToken(res.data.token);
+
+                        setIsNewItem(true);
+                    })
+                    .catch(err => {
+                        history.replace('/');
+                    });
+            }
         }
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    function handleToLogin() {
+        setIsNewItem(false);
+    }
 
     return (
         <div className="limiter">
             <div className="container-login100">
                 <div className="wrap-login100">
                     {
-                        isNewUser && newUser ? <Formik
+                        isNewItem ? (newUser ? <Formik
                             initialValues={
                                 {
                                     name: newUser.name,
                                     cpf: newUser.cpf ? newUser.cpf : '',
                                     birth: newUser.birth.toString().split('T')[0],
                                     phone: newUser.phone ? newUser.phone : '',
-                                    email: newUser.email,
                                     password: ''
                                 }
                             }
@@ -93,7 +123,6 @@ function Landing() {
                                         cpf: values.cpf,
                                         birth: values.birth,
                                         phone: values.phone,
-                                        email: values.email,
                                         password: values.password,
                                         active: true,
                                         paused: false,
@@ -103,8 +132,7 @@ function Landing() {
                                     });
                                 }
                                 catch (err) {
-                                    console.log('error put new user');
-                                    console.log(err);
+                                    handelShowError();
                                 }
 
                                 setIsSaving(false);
@@ -116,87 +144,83 @@ function Landing() {
                                 <Form style={{ width: '100%' }} onSubmit={handleSubmit}>
                                     <Row className="justify-content-center">
                                         <Col sm={10}>
-                                            <h2 className="text-danger login100-form-title">Bem-vindo(a), complete os seus dados para ativar o seu cadastro.</h2>
+                                            <h1 className="text-danger">Bem-vindo(a),</h1>
+                                            <h2 className="text-secondary">Complete os seus dados para ativar o seu cadastro.</h2>
                                         </Col>
                                     </Row>
-                                    <Row className="justify-content-center">
+
+                                    <Row className="mt-3 justify-content-center">
                                         <Col sm={10}>
-                                            <Form.Group controlId="teamFormGridName">
-                                                <Form.Label>Nome</Form.Label>
-                                                <Form.Control type="text"
-                                                    onChange={handleChange}
-                                                    value={values.name}
-                                                    name="name"
-                                                    isInvalid={!!errors.name}
-                                                />
-                                                <Form.Control.Feedback type="invalid">{errors.name}</Form.Control.Feedback>
-                                            </Form.Group>
+                                            <Form.Row>
+                                                <Form.Group as={Col} controlId="teamFormGridName">
+                                                    <Form.Label>Nome</Form.Label>
+                                                    <Form.Control type="text"
+                                                        onChange={handleChange}
+                                                        value={values.name}
+                                                        name="name"
+                                                        isInvalid={!!errors.name}
+                                                    />
+                                                    <Form.Control.Feedback type="invalid">{errors.name}</Form.Control.Feedback>
+                                                </Form.Group>
+                                            </Form.Row>
 
-                                            <Form.Group controlId="teamFormGridCPF">
-                                                <Form.Label>CPF (opcional)</Form.Label>
-                                                <Form.Control
-                                                    type="text"
-                                                    onChange={handleChange}
-                                                    value={values.cpf}
-                                                    name="cpf"
-                                                    isInvalid={!!errors.cpf}
-                                                />
-                                                <Form.Control.Feedback type="invalid">{errors.cpf}</Form.Control.Feedback>
-                                            </Form.Group>
+                                            <Form.Row>
+                                                <Form.Group sm={6} as={Col} controlId="teamFormGridCPF">
+                                                    <Form.Label>CPF (opcional)</Form.Label>
+                                                    <Form.Control
+                                                        type="text"
+                                                        onChange={handleChange}
+                                                        value={values.cpf}
+                                                        name="cpf"
+                                                        isInvalid={!!errors.cpf}
+                                                    />
+                                                    <Form.Control.Feedback type="invalid">{errors.cpf}</Form.Control.Feedback>
+                                                </Form.Group>
 
-                                            <Form.Group controlId="teamFormGridBirth">
-                                                <Form.Label>Nascimento</Form.Label>
-                                                <Form.Control
-                                                    type="date"
-                                                    onChange={handleChange}
-                                                    value={values.birth}
-                                                    name="birth"
-                                                    isInvalid={!!errors.birth}
-                                                />
-                                                <Form.Control.Feedback type="invalid">{errors.birth}</Form.Control.Feedback>
-                                            </Form.Group>
+                                                <Form.Group sm={6} as={Col} controlId="teamFormGridBirth">
+                                                    <Form.Label>Nascimento</Form.Label>
+                                                    <Form.Control
+                                                        type="date"
+                                                        onChange={handleChange}
+                                                        value={values.birth}
+                                                        name="birth"
+                                                        isInvalid={!!errors.birth}
+                                                    />
+                                                    <Form.Control.Feedback type="invalid">{errors.birth}</Form.Control.Feedback>
+                                                </Form.Group>
+                                            </Form.Row>
 
-                                            <Form.Group controlId="teamFormGridPhone">
-                                                <Form.Label>Telefone</Form.Label>
-                                                <Form.Control
-                                                    type="text"
-                                                    onChange={handleChange}
-                                                    value={values.phone}
-                                                    name="phone"
-                                                    isInvalid={!!errors.phone}
-                                                />
-                                                <Form.Control.Feedback type="invalid">{errors.phone}</Form.Control.Feedback>
-                                            </Form.Group>
+                                            <Form.Row>
+                                                <Form.Group sm={6} as={Col} controlId="teamFormGridPhone">
+                                                    <Form.Label>Telefone</Form.Label>
+                                                    <Form.Control
+                                                        type="text"
+                                                        onChange={handleChange}
+                                                        value={values.phone}
+                                                        name="phone"
+                                                        isInvalid={!!errors.phone}
+                                                    />
+                                                    <Form.Control.Feedback type="invalid">{errors.phone}</Form.Control.Feedback>
+                                                </Form.Group>
 
-                                            <Form.Group controlId="teamFormGridemail">
-                                                <Form.Label>E-mail</Form.Label>
-                                                <Form.Control
-                                                    type="email"
-                                                    onChange={handleChange}
-                                                    value={values.email}
-                                                    name="email"
-                                                    isInvalid={!!errors.email}
-                                                />
-                                                <Form.Control.Feedback type="invalid">{errors.email}</Form.Control.Feedback>
-                                            </Form.Group>
-
-                                            <Form.Group controlId="teamFormGridCPF">
-                                                <Form.Label>Senha</Form.Label>
-                                                <Form.Control
-                                                    type="text"
-                                                    onChange={handleChange}
-                                                    value={values.password}
-                                                    name="password"
-                                                    isInvalid={!!errors.password}
-                                                />
-                                                <Form.Control.Feedback type="invalid">{errors.password}</Form.Control.Feedback>
-                                            </Form.Group>
+                                                <Form.Group sm={6} as={Col} controlId="teamFormGridCPF">
+                                                    <Form.Label>Senha</Form.Label>
+                                                    <Form.Control
+                                                        type="text"
+                                                        onChange={handleChange}
+                                                        value={values.password}
+                                                        name="password"
+                                                        isInvalid={!!errors.password}
+                                                    />
+                                                    <Form.Control.Feedback type="invalid">{errors.password}</Form.Control.Feedback>
+                                                </Form.Group>
+                                            </Form.Row>
                                         </Col>
                                     </Row>
-                                    <Row className="justify-content-center">
+                                    <Row className="justify-content-center text-right">
                                         <Col sm={10}>
-                                            <Button variant="outline-danger" onClick={() => { setIsNewUser(false) }}>Cancelar</Button>
-                                            <Button variant="danger" type="submit">
+                                            <Button variant="outline-danger" onClick={() => { setIsNewItem(false) }}>Cancelar</Button>
+                                            <Button className="ml-3" variant="danger" type="submit">
                                                 {
                                                     isSaving ? <Spinner
                                                         as="span"
@@ -210,7 +234,12 @@ function Landing() {
                                         </Col>
                                     </Row>
 
-                                    <Modal show={showUserActivated} onHide={handleCloseUserActivated} >
+                                    <Modal
+                                        show={showUserActivated}
+                                        onHide={handleCloseUserActivated}
+                                        keyboard={false}
+                                        backdrop="static"
+                                    >
                                         <Modal.Header>
                                             <Modal.Title className="text-danger">Parabéns</Modal.Title>
                                         </Modal.Header>
@@ -226,12 +255,12 @@ function Landing() {
                                             </Row>
                                         </Modal.Body>
                                         <Modal.Footer>
-                                            <Button variant="danger" onClick={handleCloseUserActivated}>Ok</Button>
+                                            <Button variant="danger" onClick={handleToLogin}>Entrar na plataforma</Button>
                                         </Modal.Footer>
                                     </Modal>
                                 </Form>
                             )}
-                        </Formik>
+                        </Formik> : <NewStore email={newStoreEmail} token={newStoreToken} />)
                             : <>
                                 <div className="login100-pic js-tilt">
                                     <Image src={logoImg} alt="sing up image" />
@@ -325,6 +354,27 @@ function Landing() {
                     }
                 </div>
             </div>
+
+            <Modal show={showError}
+                onHide={handleCloseError} >
+                <Modal.Header>
+                    <Modal.Title className="text-danger">Algo deu errado!</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Row>
+                        <Col className="mt-3" sm={6}>
+                            <Image fluid src={error404Img} alt="Erro de conexão" />
+                        </Col>
+                        <Col className="mt-3 text-secondary" sm={6}>
+                            <p>Infelizmente algo deu errado com a sua solicitação.</p>
+                            <p>Pode ser a conexão com a internet ou o nosso servidor. Por favor tente outra vez.</p>
+                        </Col>
+                    </Row>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="danger" onClick={handleCloseError}>Entendi</Button>
+                </Modal.Footer>
+            </Modal>
         </div>
     )
 };

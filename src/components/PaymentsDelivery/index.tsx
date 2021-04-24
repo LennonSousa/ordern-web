@@ -22,7 +22,7 @@ interface PaymentsDeliveryProps {
 }
 
 const userValidatiionSchema = Yup.object().shape({
-    brand: Yup.string().required('Obrigatório!')
+    brand: Yup.string().required('Obrigatório!').max(25, 'Deve conter no máximo 25 caracteres!'),
 });
 
 const PaymentsDelivery: React.FC<PaymentsDeliveryProps> = ({ paymentDelivery, withButton, setOutdated }) => {
@@ -155,7 +155,7 @@ const PaymentsDelivery: React.FC<PaymentsDeliveryProps> = ({ paymentDelivery, wi
                                                 isInvalid={!!errors.brand}
                                             />
                                             <Form.Control.Feedback type="invalid">{errors.brand}</Form.Control.Feedback>
-                                            <Form.Text className="text-muted text-right">1/25 caracteres.</Form.Text>
+                                            <Form.Text className="text-muted text-right">{`${values.brand.length}/25 caracteres.`}</Form.Text>
                                         </Col>
 
                                         <Col sm={2}>

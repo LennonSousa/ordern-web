@@ -15,8 +15,6 @@ import Ordering from '../pages/Ordering';
 import Reports from '../pages/Reports';
 import OrderDetails from '../pages/OrderDetails';
 
-
-
 interface CustomRouteProps extends RouteProps {
     isPrivate?: boolean;
 }
@@ -57,6 +55,7 @@ function Routes() {
         <Switch>
             <CustomRoute exact path="/" component={Landing} />
             <CustomRoute path="/users/authenticate/new" component={Landing} />
+            <CustomRoute path="/stores/authenticate/new" component={Landing} />
             <CustomRoute isPrivate path="/dashboard" component={Dashboard} />
             <CustomRoute isPrivate path="/menu" component={Menu} />
             <CustomRoute isPrivate path="/store" component={Store} />

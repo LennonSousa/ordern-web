@@ -22,9 +22,7 @@ const ShipmentTypes: React.FC = () => {
 
                     setWaitingStoreDeliveryGroups(false);
                 })
-                .catch(err => {
-
-                });
+                .catch(() => { });
 
             setOutdated(false);
         }

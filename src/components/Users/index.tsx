@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-
 import { Modal, Row, Col, Table, Form, ListGroup, Button, Spinner, Toast } from 'react-bootstrap';
 import { BsPersonPlus } from "react-icons/bs";
 import { Formik } from 'formik';
@@ -58,7 +57,7 @@ const UsersItem: React.FC = () => {
                 .then(res => {
                     setUsers(res.data);
 
-                    api.get('user/types')
+                    api.get('users/types')
                         .then(res => {
                             setUsersTypes(res.data);
                         })
@@ -91,30 +90,32 @@ const UsersItem: React.FC = () => {
 
             <Row className="mt-4">
                 <Col>
-                    <Table striped hover>
-                        <thead>
-                            <tr>
-                                <th>Usuário</th>
-                                <th>E-mail</th>
-                                <th>Permissões</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            {
-                                waitingUsers ? <Spinner
-                                    as="span"
-                                    animation="border"
-                                    size="sm"
-                                    role="status"
-                                    aria-hidden="true"
-                                /> : users.map((userItem, index) => {
-                                    return <UserItems key={index} userItem={userItem} usersTypes={usersTypes} setOutdated={setOutdated} />
-                                })
-                            }
-                        </tbody>
-                    </Table>
+                    {
+                        waitingUsers ? <Spinner
+                            as="span"
+                            animation="border"
+                            size="sm"
+                            role="status"
+                            aria-hidden="true"
+                        /> :
+                            <Table striped hover>
+                                <thead>
+                                    <tr>
+                                        <th>Usuário</th>
+                                        <th>E-mail</th>
+                                        <th>Permissões</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody >
+                                    {
+                                        users.map((userItem, index) => {
+                                            return <UserItems key={index} userItem={userItem} usersTypes={usersTypes} setOutdated={setOutdated} />
+                                        })
+                                    }
+                                </tbody>
+                            </Table>
+                    }
                 </Col>
             </Row>
 
@@ -135,14 +136,14 @@ const UsersItem: React.FC = () => {
                         setIsSaving(true);
 
                         try {
-                            const res = await api.post('users/new', {
+                            const res = await api.post('users', {
                                 name: values.name,
                                 birth: values.birth,
                                 email: values.email,
                                 type: values.type
                             });
 
-                            if (res.status === 204) {
+                            if (res.status === 201) {
                                 api.get('users')
                                     .then(res => {
                                         setUsers(res.data);

@@ -9,10 +9,8 @@ import { ProductCategory } from '../ProductCategory';
 import { ContextSelectedProduct } from '../../context/selectedProductContext';
 import { maskCurrency } from '../../utils/maskCurrency';
 
-
-
 export interface ProductAditional {
-    id: number;
+    id: string;
     pdv: string;
     price: number;
     order: number;
@@ -22,7 +20,7 @@ export interface ProductAditional {
 
 interface ProductAditionalProps {
     productAditional: ProductAditional;
-    idCategory: number;
+    idCategory: string;
 }
 
 const ProductAditionalItem: React.FC<ProductAditionalProps> = ({ productAditional, idCategory }) => {
@@ -60,7 +58,7 @@ const ProductAditionalItem: React.FC<ProductAditionalProps> = ({ productAditiona
 
         if (field === 'additional') {
             listAdditionals.forEach(additional => {
-                if (additional.id === Number(value)) {
+                if (additional.id === value) {
                     setProductAdditionalItem({ ...productAdditionalItem, [field]: additional });
                 }
             })
@@ -82,7 +80,7 @@ const ProductAditionalItem: React.FC<ProductAditionalProps> = ({ productAditiona
 
             handleTabComplements(true);
 
-            if (productAdditionalItem.id !== 0) {
+            if (productAdditionalItem.id !== '0') {
                 handleListUpdateProductAdditionals([productAdditionalItem.id]);
             }
 
@@ -145,9 +143,9 @@ const ProductAditionalItem: React.FC<ProductAditionalProps> = ({ productAditiona
             setButtonDelete('inline-block');
 
             handleTabComplements(true);
-            let listAdditionalsToUpdate: Number[] = [];
+            let listAdditionalsToUpdate: string[] = [];
 
-            if (productAdditionalItem.id !== 0) {
+            if (productAdditionalItem.id !== '0') {
                 handleListDeleteProductAdditionals(productAdditionalItem.id);
             }
 
@@ -157,7 +155,7 @@ const ProductAditionalItem: React.FC<ProductAditionalProps> = ({ productAditiona
 
                     return {
                         ...productCategory, productAdditional: updatedAdditionals.map((additional, index) => {
-                            if (additional.id !== 0) {
+                            if (additional.id !== '0') {
                                 listAdditionalsToUpdate.push(additional.id);
                             }
 

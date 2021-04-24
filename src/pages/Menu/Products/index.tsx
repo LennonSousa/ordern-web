@@ -73,19 +73,19 @@ const ProductsTab: React.FC = () => {
 
     /* Products Values */
     const [listProductValues, setListProductValues] = useState<ProductValue[]>([]);
-    const [listDeleteProductValues, setListDeleteProductValues] = useState<Number[]>([]);
+    const [listDeleteProductValues, setListDeleteProductValues] = useState<string[]>([]);
 
     /* Modal tab complements product */
     const [showComplementsDnd, setShowComplementsDnd] = useState(false);
 
     /* Product Categories */
-    const [tempListCategoriesToSaveAllAdditionals, setTempListCategoriesToSaveAllAdditionals] = useState<Number[]>([]);
-    const [listUpdateProductCategories, setListUpdateProductCategories] = useState<Number[]>([]);
-    const [listDeleteProductCategories, setListDeleteProductCategories] = useState<Number[]>([]);
+    const [tempListCategoriesToSaveAllAdditionals, setTempListCategoriesToSaveAllAdditionals] = useState<string[]>([]);
+    const [listUpdateProductCategories, setListUpdateProductCategories] = useState<string[]>([]);
+    const [listDeleteProductCategories, setListDeleteProductCategories] = useState<string[]>([]);
 
     /* Product Additionals */
-    const [listUpdateProductAdditionals, setListUpdateProductAdditionals] = useState<Number[]>([]);
-    const [listDeleteProductAdditionals, setListDeleteProductAdditionals] = useState<Number[]>([]);
+    const [listUpdateProductAdditionals, setListUpdateProductAdditionals] = useState<string[]>([]);
+    const [listDeleteProductAdditionals, setListDeleteProductAdditionals] = useState<string[]>([]);
 
     /* Product Availables */
 
@@ -93,13 +93,13 @@ const ProductsTab: React.FC = () => {
 
     const handleCloseCreateProduct = () => setShowCreateProduct(false);
 
-    const handleShowCreateProduct = (categoryId: number) => {
+    const handleShowCreateProduct = (categoryId: string) => {
         setSelectedProduct(
             {
-                id: 0,
+                id: '0',
                 title: '',
                 description: '',
-                image: '',
+                images: [],
                 maiority: false,
                 code: '',
                 price_one: true,
@@ -111,7 +111,7 @@ const ProductsTab: React.FC = () => {
                 available_all: true,
                 on_request: false,
                 category: {
-                    id: categoryId !== 0 ? categoryId : 0,
+                    id: categoryId !== '0' ? categoryId : '0',
                     title: '',
                     paused: false,
                     order: 0,
@@ -135,7 +135,7 @@ const ProductsTab: React.FC = () => {
     const [showSortProduct, setShowSortProduct] = useState(false);
 
     const handleCloseSortProduct = () => setShowSortProduct(false);
-    const handleShowSortProduct = async (categoryId: number) => {
+    const handleShowSortProduct = async (categoryId: string) => {
         if (listCategories) {
             listCategories.forEach(category => {
                 if (category.id === categoryId) {
@@ -223,13 +223,13 @@ const ProductsTab: React.FC = () => {
         setTabSale(updated);
     }
 
-    function handleListUpdateProductCategories(id: number) {
+    function handleListUpdateProductCategories(id: string) {
         if (!listUpdateProductCategories.find(item => { return item === id })) {
             setListUpdateProductCategories([...listUpdateProductCategories, id]);
         }
     }
 
-    function handleListUpdateProductAdditionals(ids: Number[]) {
+    function handleListUpdateProductAdditionals(ids: string[]) {
         let updatedAdditionalIdsToUpdate = listUpdateProductAdditionals;
 
         ids.forEach(id => {
@@ -241,13 +241,13 @@ const ProductsTab: React.FC = () => {
         setListUpdateProductAdditionals(updatedAdditionalIdsToUpdate);
     }
 
-    function handleListDeleteProductCategories(id: number) {
+    function handleListDeleteProductCategories(id: string) {
         if (!listDeleteProductCategories.find(item => { return item === id })) {
             setListDeleteProductCategories([...listDeleteProductCategories, id]);
         }
     }
 
-    function handleListDeleteProductAdditionals(id: number) {
+    function handleListDeleteProductAdditionals(id: string) {
         if (!listDeleteProductAdditionals.find(item => { return item === id })) {
             setListDeleteProductAdditionals([...listDeleteProductAdditionals, id]);
         }
@@ -272,7 +272,7 @@ const ProductsTab: React.FC = () => {
                 data.append('price_one', String(selectedProduct.price_one));
                 data.append('price', String(selectedProduct.price));
                 data.append('order', String(selectedProduct.order));
-                data.append('category', String(selectedProduct.category.id));
+                data.append('category', selectedProduct.category.id);
 
                 const response = await api.post('products', data);
 
@@ -317,7 +317,7 @@ const ProductsTab: React.FC = () => {
 
     }
 
-    async function handelModalUpdateProduct(productId: number) {
+    async function handelModalUpdateProduct(productId: string) {
         setSelectedProduct(null);
         setListSelectedProductCategoriesDnd(null);
         setListDeleteProductValues([]);
@@ -351,8 +351,8 @@ const ProductsTab: React.FC = () => {
 
             setListProductValues(product.values);
 
-            if (product.image)
-                setImagePreview(product.image);
+            if (product.images[0])
+                setImagePreview(product.images[0].path);
             else
                 setImagePreview(noPhoto);
 
@@ -374,7 +374,7 @@ const ProductsTab: React.FC = () => {
                 data.append('description', selectedProduct.description);
 
                 if (imageSelected) {
-                    data.append('image', imageSelected);
+                    data.append('images', imageSelected);
                 }
 
                 data.append('maiority', String(selectedProduct.maiority));
@@ -382,13 +382,13 @@ const ProductsTab: React.FC = () => {
                 data.append('price_one', String(selectedProduct.price_one));
                 data.append('price', String(selectedProduct.price));
                 data.append('order', String(selectedProduct.order));
-                data.append('category', String(selectedProduct.category.id));
+                data.append('category', selectedProduct.category.id);
                 data.append('on_request', String(selectedProduct.on_request));
 
                 // Update product details
                 if (tabDetails) {
                     listProductValues.forEach(async productValue => {
-                        if (productValue.id === 0) {
+                        if (productValue.id === '0') {
                             // Create a value for this prodcut
                             await api.post('product/values', productValue);
                         }
@@ -458,7 +458,7 @@ const ProductsTab: React.FC = () => {
 
                     // ***** Creating *****
                     selectedProduct.categoriesAdditional.forEach(async productCategory => {
-                        if (productCategory.id === 0) {
+                        if (productCategory.id === '0') {
                             // Create a category for this prodcut
                             const response = await api.post('product/categories', productCategory);
 
@@ -475,7 +475,7 @@ const ProductsTab: React.FC = () => {
                         }
                         else {
                             productCategory.productAdditional.forEach(async productAdditional => {
-                                if (productAdditional.id === 0) {
+                                if (productAdditional.id === '0') {
                                     await api.post('product/additionals', {
                                         ...productAdditional,
                                         additional: productAdditional.additional.id,
@@ -545,7 +545,7 @@ const ProductsTab: React.FC = () => {
         }
     }
 
-    function handlePauseProduct(productId: number) {
+    function handlePauseProduct(productId: string) {
         try {
             listCategories && listCategories.forEach(category => {
                 category.products.forEach(product => {
@@ -585,30 +585,11 @@ const ProductsTab: React.FC = () => {
             setSpinnerDeleteProduct('inline-block');
 
             try {
+                await api.delete(`products/${selectedProduct.id}`);
 
-                if (listSelectedProducts) {
-                    await api.delete(`products/${selectedProduct.id}`);
+                const res = await api.get('categories');
 
-                    const list = listSelectedProducts.filter(item => { return item.id !== selectedProduct.id });
-
-                    list.forEach(async (product, index) => {
-                        try {
-                            await api.put(`products/${product.id}`, {
-                                title: product.title,
-                                paused: product.paused,
-                                order: index
-                            });
-                        }
-                        catch (err) {
-                            console.log('error to save categories order after deleting.');
-                            console.log(err)
-                        }
-                    });
-
-                    const res = await api.get('categories');
-
-                    handleListCategories(res.data);
-                }
+                handleListCategories(res.data);
 
                 setSpinnerDeleteProduct('none');
                 handleCloseUpdateProduct();
@@ -708,7 +689,7 @@ const ProductsTab: React.FC = () => {
         if (selectedProduct) {
             setListProductValues(() => ([
                 ...updatedProductValues, {
-                    id: 0,
+                    id: '0',
                     description: '',
                     value: 0,
                     order: listProductValues.length,
@@ -759,7 +740,7 @@ const ProductsTab: React.FC = () => {
 
             setSelectedProduct({
                 ...selectedProduct, categoriesAdditional: [...updatedcategoriesAdditional, {
-                    id: 0,
+                    id: '0',
                     title: '',
                     min: 0,
                     max: 0,
@@ -794,7 +775,7 @@ const ProductsTab: React.FC = () => {
     }
 
     /* Sort product additionals */
-    function handleOnDragEndProductAdditionals(result: DropResult, idCategory: number) {
+    function handleOnDragEndProductAdditionals(result: DropResult, idCategory: string) {
         if (result.destination) {
             const from = result.source.index;
             const to = result.destination.index;
@@ -946,7 +927,7 @@ const ProductsTab: React.FC = () => {
                     user && rbac.can(String(user.type.code)).createAny('products').granted && <section className="mt-3">
                         <Row>
                             <Col>
-                                <Button variant="danger" onClick={() => { handleShowCreateProduct(0) }} >Criar produto</Button>
+                                <Button variant="danger" onClick={() => { handleShowCreateProduct('0') }} >Criar produto</Button>
                             </Col>
                         </Row>
                     </section>
@@ -1060,7 +1041,7 @@ const ProductsTab: React.FC = () => {
                                                 value={selectedProduct?.category.id}
                                                 onChange={(e) => {
                                                     if (selectedProduct) {
-                                                        setSelectedProduct({ ...selectedProduct, category: { ...selectedProduct.category, id: Number(e.target.value) } })
+                                                        setSelectedProduct({ ...selectedProduct, category: { ...selectedProduct.category, id: e.target.value } })
                                                     }
                                                 }}
                                             >
@@ -1187,7 +1168,11 @@ const ProductsTab: React.FC = () => {
                                                                 value={selectedProduct.category.id}
                                                                 onChange={(e) => {
                                                                     if (selectedProduct) {
-                                                                        setSelectedProduct({ ...selectedProduct, category: { ...selectedProduct.category, id: Number(e.target.value) } })
+                                                                        setSelectedProduct({
+                                                                            ...selectedProduct, category: {
+                                                                                ...selectedProduct.category, id: e.target.value
+                                                                            }
+                                                                        })
                                                                     }
                                                                 }}
                                                             >

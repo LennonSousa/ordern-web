@@ -94,6 +94,7 @@ const UsersItem: React.FC<UsersProps> = ({ userItem, usersTypes, setOutdated }) 
         }
 
         setIsDeleting(false);
+        handleCloseUsersDelete();
         setOutdated(true);
     }
 
