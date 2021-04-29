@@ -4,7 +4,7 @@ import { Order } from '../components/Orders';
 
 interface SelectedOrderContextData {
     selectedOrder: Order | null;
-    handleSelectedOrder(idOrder: number): void;
+    handleSelectedOrder(idOrder: string): void;
 }
 
 const ContextSelectedOrder = createContext<SelectedOrderContextData>({} as SelectedOrderContextData);

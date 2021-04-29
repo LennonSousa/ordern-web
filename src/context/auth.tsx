@@ -71,7 +71,7 @@ const AuthProvider: React.FC = ({ children }) => {
         socketClient.disconnected && socketClient.connect();
 
         socketClient.on("connect", () => {
-            console.log(socketClient.id); // x8WIv7-mJelg7on_ALbx
+            //console.log(socketClient.id); // x8WIv7-mJelg7on_ALbx
         });
 
         socketClient.emit('orders:read');

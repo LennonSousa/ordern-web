@@ -2,7 +2,8 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 
 const api = axios.create({
-    baseURL: 'https://api.casadecarnesisrael.com.br'
+    baseURL: 'https://api.casadecarnesisrael.com.br',
+    timeout: 10000,
 });
 
 // Add a response interceptor

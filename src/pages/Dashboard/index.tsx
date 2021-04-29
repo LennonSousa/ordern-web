@@ -13,9 +13,6 @@ import { Customer } from '../../components/Customers';
 import PageHeader from '../../components/PageHeader';
 import BreadCrumb from '../../components/BreadCrumb';
 
-
-
-
 import './styles.css';
 
 interface ordersPerOur {
@@ -96,7 +93,7 @@ function Dashboard() {
             setBestHourTotal(bestHour.range);
 
             // --- New customers in last 7 days graph --- //
-            api.get('customer', {
+            api.get('customers', {
                 params: {
                     start: addDays(startOfDay, -6),
                     end: endOfDay

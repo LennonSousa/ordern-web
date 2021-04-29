@@ -10,7 +10,6 @@ import PageHeader from '../../components/PageHeader';
 import OrderStatusItem from '../../components/OrderStatus';
 import OrdersItem, { Order } from '../../components/Orders';
 
-
 import './styles.css';
 
 function Ordering() {
@@ -31,7 +30,7 @@ function Ordering() {
                 });
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    function handleSelectedOrder(idOrder: number | null) {
+    function handleSelectedOrder(idOrder: string | null) {
         setSelectedOrder(null);
 
         if (filteredOrders && idOrder) {

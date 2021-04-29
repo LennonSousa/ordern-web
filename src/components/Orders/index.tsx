@@ -14,10 +14,8 @@ import OrderItems, { OrderItem } from '../OrderItems';
 
 import noOrderImage from '../../assets/images/undraw_no_data_re_kwbl.svg';
 
-
-
 export interface Order {
-    id: number;
+    id: string;
     tracker: string;
     customer_id: string;
     customer: string;
@@ -44,7 +42,7 @@ export interface Order {
 }
 
 interface OrderProps {
-    id: number | null;
+    id: string | null;
 }
 
 const validatiionSchema = Yup.object().shape({
@@ -89,11 +87,8 @@ const Orders: React.FC<OrderProps> = ({ id }) => {
             try {
                 await api.put(`orders/${order.id}`,
                     {
-                        client: order.customer,
                         placed_at: statusToSave.order === 2 || statusToSave.order === 3 ? new Date() : order.placed_at,
                         delivered_at: statusToSave.order === 4 ? new Date() : order.delivered_at,
-                        delivery_estimated: order.delivery_estimated,
-                        payment_type: order.payment_type,
                         cancelled_at: order.cancelled_at,
                         orderStatus: statusToSave.id,
                     });
@@ -348,14 +343,11 @@ const Orders: React.FC<OrderProps> = ({ id }) => {
                             try {
                                 await api.put(`orders/${order.id}`,
                                     {
-                                        client: order.customer,
                                         placed_at: order.placed_at,
                                         delivered_at: order.delivered_at,
-                                        payment_type: order.payment_type,
-                                        delivery_estimated: order.delivery_estimated,
+                                        cancelled_at: new Date(),
                                         orderStatus: statusToSave.id,
                                         reason_cancellation: `${values.reason_cancellation} (Cancelado pelo estabelecimento).`,
-                                        cancelled_at: new Date(),
                                     });
 
                                 handleClose();
