@@ -742,8 +742,6 @@ const ProductsTab: React.FC = () => {
                 return { ...categoryAdditionals, order: index };
             });
 
-            console.log(updatedcategoriesAdditional);
-
             setSelectedProduct({
                 ...selectedProduct, categoriesAdditional: [...updatedcategoriesAdditional, {
                     id: '0',
