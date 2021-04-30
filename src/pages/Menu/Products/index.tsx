@@ -5,9 +5,11 @@ import { Row, Col, Tabs, Tab, Accordion, Card, Image, Button, Modal, Form, ListG
 import { BsPlusSquare, BsFilterLeft, BsArrowRepeat } from 'react-icons/bs'
 
 import api from '../../../services/api';
+import rbac from '../../../services/roleBasedAccessControl';
+
 import { Context } from '../../../context/auth';
 import { CategoriesContext } from '../../../context/categoriesContext';
-import rbac from '../../../services/roleBasedAccessControl';
+import { ContextSelectedProduct } from '../../../context/selectedProductContext';
 
 import { Day } from '../../../components/OpenedDays/Days';
 import { Category } from '../../../components/Categories';
@@ -22,7 +24,6 @@ import ProductValueItem, { ProductValue } from '../../../components/ProductValue
 import ProductAvailableItem from '../../../components/ProductAvailable';
 import ProductModalShimmer from '../../../components/Shimmers/ProductModal';
 import InputMask from '../../../components/InputMask';
-import { ContextSelectedProduct } from '../../../context/selectedProductContext';
 
 import { dayOfWeekAsInteger } from '../../../utils/dayOfWeekAsInteger';
 import noPhoto from '../../../assets/images/no-photo.jpg';
@@ -124,6 +125,7 @@ const ProductsTab: React.FC = () => {
         );
 
         setImagePreview(noPhoto);
+        setImageSelected(undefined);
         setShowCreateProduct(true);
     }
 
@@ -157,7 +159,7 @@ const ProductsTab: React.FC = () => {
                 console.log(err);
             });
 
-        api.get('restaurant/opened-days')
+        api.get('store/opened-days')
             .then(res => {
                 setRestaurantOpenedDays(res.data);
             })
@@ -263,15 +265,18 @@ const ProductsTab: React.FC = () => {
                 data.append('title', selectedProduct.title);
                 data.append('description', selectedProduct.description);
 
-                if (imageSelected) {
-                    data.append('images', imageSelected);
-                }
+                if (imageSelected) data.append('images', imageSelected);
 
                 data.append('maiority', String(selectedProduct.maiority));
                 data.append('code', selectedProduct.code);
                 data.append('price_one', String(selectedProduct.price_one));
                 data.append('price', String(selectedProduct.price));
-                data.append('order', String(selectedProduct.order));
+
+                let order = 0;
+
+                listCategories.forEach(category => { if (category.id === selectedProduct.category.id) order = category.products.length; });
+
+                data.append('order', String(order));
                 data.append('category', selectedProduct.category.id);
 
                 const response = await api.post('products', data);
@@ -339,6 +344,7 @@ const ProductsTab: React.FC = () => {
 
         setButtonDeleteYesProduct('none');
         setButtonDeleteProduct('inline-block');
+        setImageSelected(undefined);
         setImagePreview('');
 
         handleShowUpdateProduct();
@@ -351,7 +357,7 @@ const ProductsTab: React.FC = () => {
 
             setListProductValues(product.values);
 
-            if (product.images[0])
+            if (product.images.length > 0 && product.images[0])
                 setImagePreview(product.images[0].path);
             else
                 setImagePreview(noPhoto);

@@ -368,7 +368,6 @@ const HighlightsTab: React.FC = () => {
                         setSpinnerSaveHighlight(true);
 
                         try {
-                            console.log(selectedProduct)
                             if (selectedProduct) {
                                 if (buttonCreateUpdateHighlight) {
                                     await api.post('highlights/landing', {
